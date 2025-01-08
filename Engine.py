@@ -177,7 +177,7 @@ def get_best_move(board, depth, moves):
     if filtered_openings:
         opening = random.choice(list(filtered_openings.items()))
         move = opening[1][len(moves)]
-        return board.parse_san(san=move).uci
+        return chess.Move.from_uci(board.parse_san(san=move).uci())
 
     best_move = None
     best_score = -float('inf')

@@ -12,12 +12,8 @@ def ai_vs_human():
             print(f"AI's turn. Current board:\n{board}")
             best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
             print(f"AI move: {best_move}")
-            if type(best_move) == str:
-                board.push_san(best_move)
-                sequence.append(best_move)
-            else:
-                sequence.append(board.san(best_move))
-                board.push(best_move)
+            sequence.append(board.san(best_move))
+            board.push(best_move)
 
         else:
             print(f"Your turn. Current board:\n{board}")

@@ -11,12 +11,8 @@ def ai_vs_ai():
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
             print(f"AI 1 move: {best_move}")
-            if type(best_move) == str:
-                board.push_san(best_move)
-                sequence.append(best_move)
-            else:
-                sequence.append(board.san(best_move))
-                board.push(best_move)
+            sequence.append(board.san(best_move))
+            board.push(best_move)
 
         else:
             best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
