@@ -8,7 +8,6 @@ def ai_vs_ai():
     sequence = []
 
     while not board.is_game_over():
-        print(f"Current board:\n{board}")
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
             print(f"AI 1 move: {best_move}")
@@ -36,6 +35,7 @@ def ai_vs_ai():
         print("Draw!")
     else:
         print("Game over.")
+    print(sequence)
 
 
 # Start AI vs AI game
