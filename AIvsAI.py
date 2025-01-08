@@ -5,13 +5,10 @@ import os
 
 
 def save_game(moves, white, black):
-    # Criar um nome de arquivo baseado no tempo atual para evitar sobrescrever arquivos
     filename = f"game_{time.strftime('%Y%m%d_%H%M%S')}.pgn"
 
-    # Determinar o resultado do jogo
     result = "1-0" if moves[-1] == "#" and len(moves) % 2 == 1 else "0-1" if moves[-1] == "#" else "1/2-1/2"
 
-    # Construir o cabeçalho PGN
     pgn_header = (
         f"[Event \"AI vs AI Game\"]\n"
         f"[Site \"Local\"]\n"
@@ -22,11 +19,9 @@ def save_game(moves, white, black):
         f"[Result \"{result}\"]\n\n"
     )
 
-    # Escrever o cabeçalho no arquivo
     with open(filename, 'w') as file:
         file.write(pgn_header)
 
-        # Escrever os movimentos em formato PGN
         move_text = ""
         for i in range(0, len(moves), 2):
             move_text += f"{i // 2 + 1}. {moves[i]}"
@@ -34,7 +29,6 @@ def save_game(moves, white, black):
                 move_text += f" {moves[i + 1]}"
             move_text += " "
 
-        # Adicionar o resultado no final dos movimentos
         move_text += result
 
         file.write(move_text.strip())
