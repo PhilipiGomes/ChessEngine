@@ -1,6 +1,7 @@
-from Engine import *
+from Engine import get_best_move
 import chess
 import time
+import os
 
 
 def save_game(moves, white, black):
@@ -46,21 +47,16 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     sequence = []
 
     while not board.is_game_over():
+        os.system('cls')
+        print(board)
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_ai1, sequence)  # Adjust depth as needed
-            print(f"AI 1 move: {best_move}")
             sequence.append(board.san(best_move))
             board.push(best_move)
-
         else:
             best_move = get_best_move(board, depth_ai2, sequence)  # Adjust depth as needed
-            print(f"AI 2 move: {best_move}")
-            if type(best_move) == str:
-                board.push_san(best_move)
-                sequence.append(best_move)
-            else:
-                sequence.append(board.san(best_move))
-                board.push(best_move)
+            sequence.append(board.san(best_move))
+            board.push(best_move)
 
 
     if board.is_checkmate():
