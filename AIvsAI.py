@@ -9,7 +9,7 @@ def ai_vs_ai():
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
-            best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
+            best_move = get_best_move(board, 4, sequence)  # Adjust depth as needed
             print(f"AI 1 move: {best_move}")
             sequence.append(board.san(best_move))
             board.push(best_move)

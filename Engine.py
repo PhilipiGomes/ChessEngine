@@ -22,14 +22,6 @@ def filter_openings_by_sequence(openings, sequence):
             filtered_openings[opening] = moves
     return filtered_openings
 
-# Execute the first move of an opening and return the new list of openings
-def execute_opening_moves(opening, board):
-    if not opening:
-        return None
-    move = opening[1][len(board.move_stack)]
-    board.push_san(move)
-    return board
-
 # Determine if the game is in the endgame
 def is_endgame(board):
     piece_map = board.piece_map()
