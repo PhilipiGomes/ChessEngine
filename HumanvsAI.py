@@ -1,23 +1,24 @@
 from Engine import *
+import chess
 
 
 # Function to test AI vs Human
 def ai_vs_human():
     board = chess.Board()
-    # Select a random opening
-    current_opening = select_random_opening(openings)
-    opening_moves = current_opening[1] if current_opening else None
-
-    if opening_moves:
-        # Execute the first move of the selected opening
-        board = execute_opening_move(current_opening, board)
+    sequence = []
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             print(f"AI's turn. Current board:\n{board}")
-            best_move = get_best_move(board, depth=3)  # Adjust depth as needed
-            print(f"AI plays: {best_move}")
-            board.push(best_move)
+            best_move = get_best_move(board, 2, sequence)  # Adjust depth as needed
+            print(f"AI move: {best_move}")
+            if type(best_move) == str:
+                board.push_san(best_move)
+                sequence.append(best_move)
+            else:
+                sequence.append(board.san(best_move))
+                board.push(best_move)
+
         else:
             print(f"Your turn. Current board:\n{board}")
             move_san = input("Enter your move (in SAN format, e.g., e4): ")
@@ -25,6 +26,7 @@ def ai_vs_human():
                 move = chess.Board.parse_san(board, move_san)
                 if move in board.legal_moves:
                     board.push_san(move_san)
+                    sequence.append(move_san)
                 else:
                     print("Invalid move. Try again.")
             except ValueError:

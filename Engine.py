@@ -18,16 +18,16 @@ def select_random_opening(openings):
 def filter_openings_by_sequence(openings, sequence):
     filtered_openings = {}
     for opening, moves in openings.items():
-        if moves[:len(sequence)] == sequence:
+        if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
             filtered_openings[opening] = moves
     return filtered_openings
 
 # Execute the first move of an opening and return the new list of openings
-def execute_opening_move(opening, board):
+def execute_opening_moves(opening, board):
     if not opening:
         return None
-    first_move = opening[1][0]
-    board.push_san(first_move)
+    move = opening[1][len(board.move_stack)]
+    board.push_san(move)
     return board
 
 # Determine if the game is in the endgame
@@ -35,7 +35,7 @@ def is_endgame(board):
     piece_map = board.piece_map()
     minor_pieces = sum(1 for p in piece_map.values() if p.piece_type in {chess.BISHOP, chess.KNIGHT})
     queens = sum(1 for p in piece_map.values() if p.piece_type == chess.QUEEN)
-    return queens == 0 or (queens == 1 and minor_pieces < 2)
+    return queens == 0 or (queens == 1 and minor_pieces < 3)
 
 # Endgame evaluation
 def endgame_eval(board):
@@ -48,17 +48,15 @@ def piece_value(board, square):
     piece = board.piece_at(square)
     if not piece:
         return 0
-    value = {'P': 1, 'N': 2.4, 'B': 4, 'R': 6.4, 'Q': 9, 'K': 0}[piece.symbol().upper()]
+    value = {'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
     return value if piece.color == chess.WHITE else -value
 
 # Evaluate king activity
 def evaluate_king_activity(board):
     king_squares = [
         square for square in chess.SQUARES
-        if board.piece_at(square) and board.piece_at(square).piece_type == chess.KING
+        if board.piece_at(square).piece_type == chess.KING
     ]
-    if len(king_squares) != 2:
-        return 0
     dist = chess.square_distance(*king_squares)
     return dist * 0.1
 
@@ -174,7 +172,13 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         return min_eval
 
 # Get the best move for the AI
-def get_best_move(board, depth):
+def get_best_move(board, depth, moves):
+    filtered_openings = filter_openings_by_sequence(openings, moves)
+    if filtered_openings:
+        opening = random.choice(list(filtered_openings.items()))
+        move = opening[1][len(moves)]
+        return move
+
     best_move = None
     best_score = -float('inf')
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
