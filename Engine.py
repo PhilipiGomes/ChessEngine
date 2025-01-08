@@ -26,43 +26,38 @@ def filter_openings_by_sequence(openings, sequence):
 def is_endgame(board):
     piece_map = board.piece_map()
     minor_pieces = sum(1 for p in piece_map.values() if p.piece_type in {chess.BISHOP, chess.KNIGHT})
-    queens = sum(1 for p in piece_map.values() if p.piece_type == chess.QUEEN)
-    return queens == 0 or (queens == 1 and minor_pieces < 3)
+    major_pieces = sum(1 for p in piece_map.values() if p.piece_type in {chess.ROOK, chess.QUEEN})
+    return major_pieces <= 1 or (major_pieces == 2 and minor_pieces < 3)
 
-# Endgame evaluation
-def endgame_eval(board):
-    material_score = sum(piece_value(board, square) for square in chess.SQUARES)
-    king_dist_penalty = evaluate_king_activity(board)
-    return material_score - king_dist_penalty
-
-# Helper to evaluate pieces
+# Evaluate pieces with refined values and mobility
 def piece_value(board, square):
     piece = board.piece_at(square)
     if not piece:
         return 0
-    value = {'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
-    return value if piece.color == chess.WHITE else -value
+    value = {'P': 1, 'N': 3.2, 'B': 3.3, 'R': 5.1, 'Q': 9.2, 'K': 0}[piece.symbol().upper()]
+    mobility = len(list(board.attacks(square))) * 0.1
+    return (value + mobility) if piece.color == chess.WHITE else -(value + mobility)
 
-# Evaluate king activity
+# Improved king activity evaluation for endgame
 def evaluate_king_activity(board):
-    king_squares = [
-        square for square in chess.SQUARES
-        if board.piece_at(square).piece_type == chess.KING
-    ]
-    dist = chess.square_distance(*king_squares)
-    return dist * 0.1
+    king_square = board.king(chess.WHITE if board.turn == chess.WHITE else chess.BLACK)
+    opponent_king_square = board.king(chess.BLACK if board.turn == chess.WHITE else chess.WHITE)
+    center_squares = [chess.E4, chess.D4, chess.E5, chess.D5]
+    king_to_center = min(chess.square_distance(king_square, sq) for sq in center_squares)
+    opponent_king_to_center = min(chess.square_distance(opponent_king_square, sq) for sq in center_squares)
+    return (opponent_king_to_center - king_to_center) * 0.1
 
-# Evaluate the board (similar to previous implementation)
+# Evaluate the board with improved evaluation logic
 def evaluate_board(board):
     if board.is_game_over():
         if board.is_checkmate():
             return float('inf') if board.turn == chess.BLACK else -float('inf')
         elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
             return 0
+
     material_score = sum(piece_value(board, square) for square in chess.SQUARES)
     positional_score = evaluate_positional(board)
     return material_score + positional_score
-
 
 def evaluate_positional(board):
     score = 0
@@ -71,36 +66,33 @@ def evaluate_positional(board):
         if not piece:
             continue
 
-        # Verifica se a peça está no final de jogo e ajusta a tabela de peças
+        # Apply specific tables for each phase of the game
         if is_endgame(board) and piece.piece_type == chess.KING:
-            table = piece_tables['K_end']  # Tabela do Rei no final de jogo
+            table = piece_tables['K_end']
         else:
-            # Acessa a tabela específica da peça, utilizando o tipo da peça
             table = piece_tables.get(piece.symbol().upper())
 
-        # Se a peça for branca, somamos, caso contrário, subtraímos (espelhando a tabela para peças negras)
         if piece.color == chess.WHITE:
-            score += table[square]  # Acessa o valor da tabela para a posição
+            score += table[square]
         else:
-            score -= table[square]  # Para peças negras, subtraímos na posição refletida
-
+            score -= table[square]
     return score
 
-
-
-# Function to rank moves for ordering
+# Refined move priority function
 def move_priority(board, move):
     if board.gives_check(move):
-        return 3
+        return 4
     elif board.is_capture(move):
         attacker = board.piece_at(move.from_square)
         victim = board.piece_at(move.to_square)
         victim_value = piece_value(board, move.to_square) if victim else 0
         attacker_value = piece_value(board, move.from_square) if attacker else 0
-        return 2 + victim_value - attacker_value
+        return 3 + victim_value - attacker_value
+    elif board.is_attacked_by(not board.turn, move.to_square):
+        return 2
     return 1
 
-# Quiescence search with ordered moves
+# Quiescence search with more tactical depth
 def quiescence(alpha, beta, board):
     stand_pat = evaluate_board(board)
     if stand_pat >= beta:
@@ -110,7 +102,7 @@ def quiescence(alpha, beta, board):
 
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
     for move in moves:
-        if board.is_capture(move):
+        if board.is_capture(move) or board.gives_check(move):
             board.push(move)
             score = -quiescence(-beta, -alpha, board)
             board.pop()
@@ -119,6 +111,7 @@ def quiescence(alpha, beta, board):
             if score > alpha:
                 alpha = score
     return alpha
+
 
 # Minimax with alpha-beta pruning and ordered moves
 def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
