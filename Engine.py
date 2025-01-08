@@ -57,7 +57,8 @@ def evaluate_board(board):
     if board.is_game_over():
         if board.is_checkmate():
             return float('inf') if board.turn == chess.BLACK else -float('inf')
-        return 0
+        elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
+            return 0
     material_score = sum(piece_value(board, square) for square in chess.SQUARES)
     positional_score = evaluate_positional(board)
     return material_score + positional_score
@@ -100,7 +101,7 @@ def move_priority(board, move):
     return 1
 
 # Quiescence search with ordered moves
-def quiescence(depth, alpha, beta, board):
+def quiescence(alpha, beta, board):
     stand_pat = evaluate_board(board)
     if stand_pat >= beta:
         return beta
@@ -111,7 +112,7 @@ def quiescence(depth, alpha, beta, board):
     for move in moves:
         if board.is_capture(move):
             board.push(move)
-            score = -quiescence(depth - 1,-beta, -alpha, board)
+            score = -quiescence(-beta, -alpha, board)
             board.pop()
             if score >= beta:
                 return beta
@@ -126,13 +127,8 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
     if board_hash in transposition_table:
         return transposition_table[board_hash]
 
-    if board.is_game_over():
-        score = evaluate_board(board)
-        transposition_table[board_hash] = score
-        return score
-
-    if depth == 0:
-        score = quiescence(depth, alpha, beta, board)
+    if depth == 0 or board.is_game_over():
+        score = quiescence(alpha, beta, board)
         transposition_table[board_hash] = score
         return score
 
