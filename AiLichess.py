@@ -12,7 +12,6 @@ def ai_play_on_lichess_bot(depth):
     print("Waiting for game events...")
     for event in client.bots.stream_incoming_events():
         print(f"Event received: {event['type']}")
-
         if event['type'] == 'challenge':
             challenge_id = event['challenge']['id']
             print(f"Accepting challenge {challenge_id}...")
