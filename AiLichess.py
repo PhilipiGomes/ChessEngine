@@ -2,7 +2,7 @@ import berserk
 import chess
 from Engine import get_best_move
 
-LICHESS_API_TOKEN = 'lip_6ytXE1H5mMnoVi7tFgCX'
+LICHESS_API_TOKEN = input('Insert your Lichess API token: ')
 
 
 def ai_play_on_lichess_bot(depth):
