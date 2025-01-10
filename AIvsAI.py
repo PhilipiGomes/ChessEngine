@@ -1,13 +1,20 @@
 from Engine import get_best_move
 import chess
 import time
-import os
 
+
+board = chess.Board()
 
 def save_game(moves, white, black):
     filename = f"game_{time.strftime('%Y%m%d_%H%M%S')}.pgn"
 
-    result = "1-0" if moves[-1] == "#" and len(moves) % 2 == 1 else "0-1" if moves[-1] == "#" else "1/2-1/2"
+    if board.is_checkmate():
+        if board.turn == chess.BLACK:
+            result = "1-0"
+        else:
+            result = "0-1"
+    else:
+        result = "1/2-1/2"
 
     pgn_header = (
         f"[Event \"AI vs AI Game\"]\n"
@@ -37,11 +44,9 @@ def save_game(moves, white, black):
 
 # Function to test AI vs AI
 def ai_vs_ai(depth_ai1, depth_ai2):
-    board = chess.Board()
     sequence = []
 
     while not board.is_game_over():
-        os.system('cls')
         print(board)
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_ai1, sequence)  # Adjust depth as needed
@@ -51,6 +56,8 @@ def ai_vs_ai(depth_ai1, depth_ai2):
             best_move = get_best_move(board, depth_ai2, sequence)  # Adjust depth as needed
             sequence.append(board.san(best_move))
             board.push(best_move)
+        print()
+
 
 
     if board.is_checkmate():
@@ -63,6 +70,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 
 # Start AI vs AI game
 start = time.time()
-ai_vs_ai(4,3)
+ai_vs_ai(3,2)
 elapsed = time.time() - start
 print(f'Tempo para terminar este jogo foi de: {elapsed:.3f} segundos')
