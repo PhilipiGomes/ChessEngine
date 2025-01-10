@@ -4,20 +4,21 @@ from chess.polyglot import zobrist_hash
 from Tables import piece_tables
 from Openings import openings
 
-# Initialize the transposition table
+
 transposition_table = {}
 
+
 # Select a random opening
-def select_random_opening(openings):
-    if not openings:
+def select_random_opening(ope):
+    if not ope:
         print("No openings available.")
         return None
-    return random.choice(list(openings.items()))
+    return random.choice(list(ope.items()))
 
 # Filter openings based on the current sequence of moves
-def filter_openings_by_sequence(openings, sequence):
+def filter_openings_by_sequence(op, sequence):
     filtered_openings = {}
-    for opening, moves in openings.items():
+    for opening, moves in op.items():
         if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
             filtered_openings[opening] = moves
     return filtered_openings
@@ -34,7 +35,7 @@ def piece_value(board, square):
     piece = board.piece_at(square)
     if not piece:
         return 0
-    value = {'P': 1, 'N': 3.2, 'B': 3.3, 'R': 5.1, 'Q': 9.2, 'K': 0}[piece.symbol().upper()]
+    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
     mobility = len(list(board.attacks(square))) * 0.1
     return (value + mobility) if piece.color == chess.WHITE else -(value + mobility)
 
@@ -126,7 +127,6 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         return score
 
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
-
     if is_maximizing:
         max_eval = -float('inf')
         for move in moves:
@@ -151,6 +151,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
                 break
         transposition_table[board_hash] = min_eval
         return min_eval
+
 
 # Get the best move for the AI
 def get_best_move(board, depth, moves):
