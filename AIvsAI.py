@@ -49,11 +49,11 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     while not board.is_game_over():
         print(board)
         if board.turn == chess.WHITE:
-            best_move = get_best_move(board, depth_ai1, sequence)  # Adjust depth as needed
+            best_move = get_best_move(board, depth_ai1, sequence)
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
-            best_move = get_best_move(board, depth_ai2, sequence)  # Adjust depth as needed
+            best_move = get_best_move(board, depth_ai2, sequence)
             sequence.append(board.san(best_move))
             board.push(best_move)
         print()
@@ -72,4 +72,4 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 start = time.time()
 ai_vs_ai(3,2)
 elapsed = time.time() - start
-print(f'Tempo para terminar este jogo foi de: {elapsed:.3f} segundos')
+print(f'Time to finish this game: {elapsed:.3f} seconds')
