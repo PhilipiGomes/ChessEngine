@@ -13,6 +13,10 @@ def load_puzzles_from_csv(csv_filename):
 def filter_puzzles_by_theme(df, theme):
     return df[df['Themes'].str.contains(theme, case=False, na=False)]
 
+# Função para filtrar puzzles por rating
+def filter_puzzles_by_rating(df, min_rating, max_rating):
+    return df[(df['Rating'] >= min_rating) & (df['Rating'] <= max_rating)]
+
 # Função para pegar um puzzle aleatório e os movimentos corretos
 def get_random_fen_and_moves(df):
     random_row = df.sample(n=1)
@@ -28,7 +32,7 @@ def update_rating(current_rating, puzzle_rating, correct):
         return current_rating + K * (0 - expected_score)
 
 # Função principal para resolver os puzzles
-def puzzle(board, depth, num_puzzles, theme=None):
+def puzzle(board, depth, num_puzzles, theme=None, rang=500):
     # Carregar os puzzles do arquivo CSV
     csv_filename = 'Chess/lichess_db_puzzle.csv'  # Atualize o caminho do arquivo, se necessário
     df_puzzles = load_puzzles_from_csv(csv_filename)
@@ -41,16 +45,22 @@ def puzzle(board, depth, num_puzzles, theme=None):
     rating = 1500
 
     # Arquivo para salvar os dados dos puzzles
-    with open(f"puzzle_results_depth_{depth}_theme_{theme}_quiscience.csv", mode='w', newline='') as file:
+    with open(f"puzzle_results_depth_{depth}_theme_{theme}_rating_{min_rating}_{max_rating}.csv", mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['PuzzleId', 'FEN', 'Moves', 'Rating', 'Themes', 'GameUrl', 'BotMoves', 'CorrectMoves', 'Result'])
 
-        for puzzle_index in range(num_puzzles):
+
+        for puzzle_index in rang(num_puzzles):
             # Obter um puzzle aleatório
             puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
             move_list = moves.split()
             board.set_fen(fen)
             
+            max_rating = rating + rang
+            min_rating = rating - rang
+            
+            df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
+
             os.system('cls')  # Limpar a tela no Windows
 
             print(f"Puzzle {puzzle_index + 1}")
@@ -106,5 +116,7 @@ board = chess.Board()
 # Solicitar tema ao usuário
 chosen_theme = input("Digite o tema desejado para os puzzles (deixe vazio para todos os temas): ").strip()
 
-# Iniciar resolução de puzzles com tema escolhido
-puzzle(board, 3, num_puzzles=100, theme=chosen_theme)
+
+
+# Iniciar resolução de puzzles com tema e rating escolhidos
+puzzle(board, 3, num_puzzles=100, theme=chosen_theme, rang=500)
