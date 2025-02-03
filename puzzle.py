@@ -57,7 +57,10 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
             min_rating = rating - rang
 
             df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
-            
+
+            if len(df_puzzles) == 0:
+                break
+
             # Obter um puzzle aleatório
             puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
             move_list = moves.split()
@@ -120,6 +123,5 @@ board = chess.Board()
 chosen_theme = input("Digite o tema desejado para os puzzles (deixe vazio para todos os temas): ").strip()
 
 
-
 # Iniciar resolução de puzzles com tema e rating escolhidos
-puzzle(board, 3, num_puzzles=100, theme=chosen_theme, rang=500)
+puzzle(board, 3, num_puzzles=50, theme=chosen_theme, rang=500)
