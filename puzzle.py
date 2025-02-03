@@ -43,6 +43,8 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
     
     # Inicializar o rating do bot
     rating = 1500
+    max_rating = rating + rang
+    min_rating = rating - rang
 
     # Arquivo para salvar os dados dos puzzles
     with open(f"puzzle_results_depth_{depth}_theme_{theme}_rating_{min_rating}_{max_rating}.csv", mode='w', newline='') as file:
@@ -50,20 +52,21 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
         writer.writerow(['PuzzleId', 'FEN', 'Moves', 'Rating', 'Themes', 'GameUrl', 'BotMoves', 'CorrectMoves', 'Result'])
 
 
-        for puzzle_index in rang(num_puzzles):
+        for puzzle_index in range(num_puzzles):
+            max_rating = rating + rang
+            min_rating = rating - rang
+
+            df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
+            
             # Obter um puzzle aleatório
             puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
             move_list = moves.split()
             board.set_fen(fen)
             
-            max_rating = rating + rang
-            min_rating = rating - rang
-            
-            df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
 
             os.system('cls')  # Limpar a tela no Windows
 
-            print(f"Puzzle {puzzle_index + 1}")
+            print(f"Puzzle {puzzle_index + 1}: {puzzle_id}")
 
             bot_moves = []
             correct_moves = []
