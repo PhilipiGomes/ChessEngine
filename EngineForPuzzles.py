@@ -2,29 +2,9 @@ import chess
 import random
 from chess.polyglot import zobrist_hash
 from Tables import piece_tables
-from Openings import openings
 
 
 transposition_table = {}
-
-
-# Select a random opening
-def select_random_opening(ope):
-    if not ope:
-        print("No openings available.")
-        return None
-    return random.choice(list(ope.items()))
-
-# Filter openings based on the current sequence of moves
-def filter_openings(op, sequence):
-    if sequence:
-        filtered_openings = {}
-        for opening, moves in op.items():
-            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
-                filtered_openings[opening] = moves
-        return filtered_openings
-    else:
-        return op
 
 # Determine if the game is in the endgame
 def is_endgame(board):
@@ -38,9 +18,8 @@ def piece_value(board, square):
     piece = board.piece_at(square)
     if not piece:
         return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
-    mobility = len(list(board.attacks(square))) * 0.1
-    return (value + mobility) if piece.color == chess.WHITE else -(value + mobility)
+    value = {'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
+    return value if piece.color == chess.WHITE else -value
 
 # Improved king activity evaluation for endgame
 def evaluate_king_activity(board):
@@ -49,7 +28,8 @@ def evaluate_king_activity(board):
     center_squares = [chess.E4, chess.D4, chess.E5, chess.D5]
     king_to_center = min(chess.square_distance(king_square, sq) for sq in center_squares)
     opponent_king_to_center = min(chess.square_distance(opponent_king_square, sq) for sq in center_squares)
-    return (opponent_king_to_center - king_to_center) * 0.1
+    distance_between_kings = chess.square_distance(king_square, opponent_king_square)
+    return ((opponent_king_to_center - king_to_center) - distance_between_kings) * 0.1
 
 # Evaluate the board with improved evaluation logic
 def evaluate_board(board):
@@ -118,22 +98,33 @@ def move_priority(board, move):
 
 # Quiescence search with more tactical depth
 def quiescence(alpha, beta, board):
+    # Avaliação da posição no estado atual
     stand_pat = evaluate_board(board)
+    
+    # Poda alfa-beta
     if stand_pat >= beta:
         return beta
     if alpha < stand_pat:
         alpha = stand_pat
 
+    # Ordenando os movimentos por prioridade
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
+    
+    # Itera sobre os movimentos para realizar a busca quiescente
     for move in moves:
+        # Apenas movimentos que são captura ou xeque são considerados
         if board.is_capture(move) or board.gives_check(move):
             board.push(move)
+            # Busca recursiva quiescente
             score = -quiescence(-beta, -alpha, board)
             board.pop()
+
+            # Verificação de poda alfa-beta
             if score >= beta:
                 return beta
             if score > alpha:
                 alpha = score
+    
     return alpha
 
 
@@ -145,11 +136,12 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         return transposition_table[board_hash]
 
     if depth == 0 or board.is_game_over():
+        # score = quiescence(alpha, beta, board)
         score = evaluate_board(board)
         transposition_table[board_hash] = score
         return score
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=is_maximizing)
     if is_maximizing:
         max_eval = -float('inf')
         for move in moves:
@@ -177,16 +169,10 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
 
 
 # Get the best move for the AI
-def get_best_move(board, depth, sequence):
-    filtered_openings = filter_openings(openings, sequence)
-    if filtered_openings:
-        opening = random.choice(list(filtered_openings.items()))
-        move = opening[1][len(sequence)]
-        return chess.Move.from_uci(board.parse_san(san=move).uci())
-
+def get_best_move(board, depth):
     best_move = None
-    best_score = -float('inf')
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
+    best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         board.push(move)
         score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), False, board)
