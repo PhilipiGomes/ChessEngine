@@ -92,8 +92,13 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
                 else:  # Movimentos de índice ímpar (do bot)
                     # Movimentos do bot
                     bot_move = get_best_move(board, depth)
+
+                    if bot_move is None:
+                        print("Erro: o bot não encontrou um movimento válido.")
+                        puzzle_solved = False
+                        break
+                    
                     bot_move_san = board.san(bot_move)
-                    bot_moves.append(bot_move_san)
 
                     # O movimento correto a ser comparado é o de índice ímpar
                     expected_move_san = board.san(board.parse_uci(move))  # Esse é o movimento correto
@@ -109,6 +114,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
                     
                     # Adicionar movimento correto do bot até este ponto
                     correct_moves.append(expected_move_san)
+
 
             # Atualizar o rating usando o rating do puzzle
             rating = update_rating(rating, puzzle_rating, puzzle_solved)

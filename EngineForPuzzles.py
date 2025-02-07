@@ -3,7 +3,6 @@ import random
 from chess.polyglot import zobrist_hash
 from Tables import piece_tables
 
-
 transposition_table = {}
 
 # Determine if the game is in the endgame
@@ -15,36 +14,42 @@ def is_endgame(board):
 
 # Evaluate pieces with refined values and mobility
 def piece_value(board, square):
+    """Avalia o valor de uma peça no tabuleiro, com ajustes para diferentes fases do jogo."""
     piece = board.piece_at(square)
-    if not piece:
+    if not piece or piece.symbol().upper() == 'K':
         return 0
-    value = {'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
+
+    value = {'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+
+    # Considerar o valor de um peão no final do jogo
+    if piece.piece_type == chess.PAWN and is_endgame(board):
+        value = 1.12  # Mais valioso no final do jogo devido à possibilidade de promoção
+
     return value if piece.color == chess.WHITE else -value
 
 # Improved king activity evaluation for endgame
 def evaluate_king_activity(board):
+    """Avalia a atividade do rei, considerando a segurança e proximidade ao centro no final do jogo."""
     king_square = board.king(chess.WHITE if board.turn == chess.WHITE else chess.BLACK)
     opponent_king_square = board.king(chess.BLACK if board.turn == chess.WHITE else chess.WHITE)
     center_squares = [chess.E4, chess.D4, chess.E5, chess.D5]
+    
+    # Distância do rei ao centro
     king_to_center = min(chess.square_distance(king_square, sq) for sq in center_squares)
     opponent_king_to_center = min(chess.square_distance(opponent_king_square, sq) for sq in center_squares)
+    
+    # Distância entre os reis
     distance_between_kings = chess.square_distance(king_square, opponent_king_square)
-    return ((opponent_king_to_center - king_to_center) - distance_between_kings) * 0.1
-
-# Evaluate the board with improved evaluation logic
-def evaluate_board(board):
-    if board.is_game_over():
-        if board.is_checkmate():
-            return float('inf') if board.turn == chess.BLACK else -float('inf')
-        elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
-            return 0
-
-    material_score = sum(piece_value(board, square) for square in chess.SQUARES)
-    positional_score = evaluate_positional(board)
-    return material_score + positional_score
-
+    
+    # Reforçar a importância do rei estar mais próximo do centro no final do jogo
+    if is_endgame(board):
+        return ((opponent_king_to_center - king_to_center) - distance_between_kings) * 0.1
+    else:
+        return 0
+    
 # Function to flip the piece tables (inverting the values for black)
 def get_flipped_table(piece):
+    """Função para inverter as tabelas para peças negras"""
     table_key = piece.symbol().upper()
     # Flipping the table for black pieces
     flipped_table = piece_tables.get(table_key, [])
@@ -54,36 +59,58 @@ def get_flipped_table(piece):
 
 
 def evaluate_positional(board):
+    """Avalia a posição das peças no tabuleiro considerando diferentes fases do jogo."""
     score = 0
     for square in chess.SQUARES:
         piece = board.piece_at(square)
         if not piece:
             continue
 
-        # Apply specific tables for each phase of the game
+        # Aplicar tabelas específicas para cada fase do jogo
         if is_endgame(board) and piece.piece_type == chess.KING:
             table = piece_tables['K_end']
         elif is_endgame(board) and piece.piece_type == chess.PAWN:
             table = piece_tables['P_end']
         else:
-            table = piece_tables.get(piece.symbol().upper())
+            table = piece_tables.get(piece.symbol().upper(), [])
 
-        # Flip the table for black pieces
-        if piece.color == chess.BLACK:
-            table = get_flipped_table(piece)
+        # Se a peça for preta, inverte a tabela
+        if piece.color == chess.BLACK and table:
+            table = table[::-1]  # Inverter a tabela para peças negras
 
-        # Ensure that 'square' is correctly transformed into a valid index for the piece table
+        # Avaliar posição com base na tabela de peças
         if table:
-            table_index = square  # Convert the square index to the corresponding table index
+            table_index = square  # O índice do quadrado no tabuleiro
             if piece.color == chess.WHITE:
                 score += (table[table_index]) * 0.1
             else:
                 score -= (table[table_index]) * 0.1
-        
+
     return score
+
+# Evaluate the board with improved evaluation logic
+def evaluate_board(board):
+    """Avalia a posição geral do tabuleiro, levando em consideração material e posição das peças."""
+    if board.is_game_over():
+        if board.is_checkmate():
+            return float('inf') if board.turn == chess.BLACK else -float('inf')
+        elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
+            return 0  # Empate
+
+    # Avaliação material (soma do valor de todas as peças)
+    material_score = sum(piece_value(board, square) for square in chess.SQUARES)
+    
+    # Avaliação posicional (considerando tabelas e a fase do jogo)
+    positional_score = evaluate_positional(board)
+    
+    # Avaliação da atividade do rei no final do jogo
+    king_activity_score = evaluate_king_activity(board)
+
+    return material_score + positional_score + king_activity_score
 
 # Refined move priority function
 def move_priority(board, move):
+    """Função de prioridade de movimento, considerando xeque, captura e ataques"""
     if board.gives_check(move):
         return 13
     elif board.is_capture(move):
@@ -98,6 +125,7 @@ def move_priority(board, move):
 
 # Quiescence search with more tactical depth
 def quiescence(alpha, beta, board):
+    """Busca quiescente com poda alfa-beta"""
     # Avaliação da posição no estado atual
     stand_pat = evaluate_board(board)
     
@@ -127,17 +155,17 @@ def quiescence(alpha, beta, board):
     
     return alpha
 
-
 # Minimax with alpha-beta pruning and ordered moves
 def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
+    """Função minimax com poda alfa-beta e movimentos ordenados"""
     board_hash = zobrist_hash(board)
 
+    # Checar se o valor da posição já está na tabela de transposição
     if board_hash in transposition_table:
         return transposition_table[board_hash]
 
     if depth == 0 or board.is_game_over():
-        # score = quiescence(alpha, beta, board)
-        score = evaluate_board(board)
+        score = evaluate_board(board)  # Usar a função de avaliação refinada
         transposition_table[board_hash] = score
         return score
 
@@ -167,9 +195,9 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         transposition_table[board_hash] = min_eval
         return min_eval
 
-
 # Get the best move for the AI
 def get_best_move(board, depth):
+    """Obter o melhor movimento para a IA considerando a profundidade e avaliação do tabuleiro"""
     best_move = None
     best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
