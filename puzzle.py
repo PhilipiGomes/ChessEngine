@@ -1,26 +1,44 @@
 import chess
 import os
-import pandas as pd
-from EngineNoOpening import get_best_move
 import csv
+import random
+import importlib.util
 
-# Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(csv_filename):
-    df = pd.read_csv(csv_filename)
-    return df
+from EngineForPuzzles import get_best_move
+
+# Função para carregar os puzzles do dicionário (todos os arquivos na pasta puzzles)
+def load_puzzles_from_dict(folder_path='puzzles'):
+    puzzles_dict = {}
+
+    # Listar todos os arquivos .py na pasta de puzzles
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".py"):
+            # Gerar o caminho completo do arquivo
+            file_path = os.path.join(folder_path, filename)
+            
+            # Carregar o arquivo Python dinamicamente
+            spec = importlib.util.spec_from_file_location(filename, file_path)
+            puzzles_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(puzzles_module)
+            
+            # A variável "puzzles_dict" deve estar dentro de cada arquivo
+            puzzles_dict.update(puzzles_module.puzzles_dict)
+
+    return puzzles_dict
 
 # Função para filtrar puzzles por tema
-def filter_puzzles_by_theme(df, theme):
-    return df[df['Themes'].str.contains(theme, case=False, na=False)]
+def filter_puzzles_by_theme(puzzles_dict, theme):
+    return {k: v for k, v in puzzles_dict.items() if theme.lower() in (v['Themes'] or '').lower()}
 
 # Função para filtrar puzzles por rating
-def filter_puzzles_by_rating(df, min_rating, max_rating):
-    return df[(df['Rating'] >= min_rating) & (df['Rating'] <= max_rating)]
+def filter_puzzles_by_rating(puzzles_dict, min_rating, max_rating):
+    return {k: v for k, v in puzzles_dict.items() if v['Rating'] is not None and min_rating <= v['Rating'] <= max_rating}
 
 # Função para pegar um puzzle aleatório e os movimentos corretos
-def get_random_fen_and_moves(df):
-    random_row = df.sample(n=1)
-    return random_row['PuzzleId'].values[0], random_row['FEN'].values[0], random_row['Moves'].values[0], random_row['Themes'].values[0], random_row['GameUrl'].values[0], random_row['Rating'].values[0]
+def get_random_fen_and_moves(puzzles_dict):
+    random_puzzle_id = random.choice(list(puzzles_dict.keys()))
+    puzzle = puzzles_dict[random_puzzle_id]
+    return puzzle['PuzzleId'], puzzle['FEN'], puzzle['Moves'], puzzle['Themes'], puzzle['GameUrl'], puzzle['Rating']
 
 # Função para calcular a nova classificação (rating) usando o sistema Elo
 def update_rating(current_rating, puzzle_rating, correct):
@@ -32,15 +50,14 @@ def update_rating(current_rating, puzzle_rating, correct):
         return current_rating + K * (0 - expected_score)
 
 # Função principal para resolver os puzzles
-def puzzle(board, depth, num_puzzles, theme=None, rang=500):
-    # Carregar os puzzles do arquivo CSV
-    csv_filename = 'Chess/lichess_db_puzzle.csv'  # Atualize o caminho do arquivo, se necessário
-    df_puzzles = load_puzzles_from_csv(csv_filename)
-    
+def puzzle(board, depth, theme=None, rang=500):
+    # Carregar os puzzles do arquivo de dicionário
+    puzzles_dict = load_puzzles_from_dict()
+
     # Filtrar puzzles pelo tema, se fornecido
     if theme:
-        df_puzzles = filter_puzzles_by_theme(df_puzzles, theme)
-    
+        puzzles_dict = filter_puzzles_by_theme(puzzles_dict, theme)
+
     # Inicializar o rating do bot
     rating = 1500
     max_rating = rating + rang
@@ -51,77 +68,68 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
         writer = csv.writer(file)
         writer.writerow(['PuzzleId', 'FEN', 'Moves', 'Rating', 'Themes', 'GameUrl', 'BotMoves', 'CorrectMoves', 'Result'])
 
+        # Filtrar puzzles pelo rating
+        puzzles_dict = filter_puzzles_by_rating(puzzles_dict, min_rating, max_rating)
 
-        for puzzle_index in range(num_puzzles):
-            max_rating = rating + rang
-            min_rating = rating - rang
+        # Obter um puzzle aleatório
+        puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(puzzles_dict)
+        move_list = moves.split()
+        board.set_fen(fen)
 
-            df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
+        # Limpar a tela no Windows ou sistemas Unix
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-            if len(df_puzzles) == 0:
-                break
+        print(f"Puzzle ID: {puzzle_id}")
 
-            # Obter um puzzle aleatório
-            puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
-            move_list = moves.split()
-            board.set_fen(fen)
-            
+        bot_moves = []
+        correct_moves = []
+        puzzle_solved = True
 
-            os.system('cls')  # Limpar a tela no Windows
+        # Itera sobre os movimentos do puzzle
+        for i, move in enumerate(move_list):
+            if i % 2 == 0:  # Movimentos de índice par (do adversário)
+                # Executar movimento do adversário
+                try:
+                    move_san = board.san(board.parse_uci(move))
+                    board.push_san(move_san)
+                    bot_moves.append(move_san)
+                    correct_moves.append(move_san)  # Adicionar movimento do adversário na lista de movimentos corretos
+                except ValueError:
+                    print(f"Movimento inválido: {move}")
+                    puzzle_solved = False
+                    break
+            else:  # Movimentos de índice ímpar (do bot)
+                # Movimentos do bot
+                bot_move = get_best_move(board, depth)
+                bot_move_san = board.san(bot_move)
+                bot_moves.append(bot_move_san)
 
-            print(f"Puzzle {puzzle_index + 1}: {puzzle_id}")
+                # O movimento correto a ser comparado é o de índice ímpar
+                expected_move_san = board.san(board.parse_uci(move))  # Esse é o movimento correto
 
-            bot_moves = []
-            correct_moves = []
-            puzzle_solved = True
-
-            for i, move in enumerate(move_list):
-                if i % 2 == 0:  # Movimentos de índice par (do adversário)
-                    # Executar movimento do adversário
-                    try:
-                        move_san = board.san(board.parse_uci(move))
-                        board.push_san(move_san)
-                        bot_moves.append(move_san)
-                        correct_moves.append(move_san)  # Adicionar movimento do adversário na lista de movimentos corretos
-                    except ValueError:
-                        print(f"Movimento inválido: {move}")
-                        puzzle_solved = False
-                        break
-                else:  # Movimentos de índice ímpar (do bot)
-                    # Movimentos do bot
-                    bot_move = get_best_move(board, depth)
-                    bot_move_san = board.san(bot_move)
-                    bot_moves.append(bot_move_san)
-
-                    # O movimento correto a ser comparado é o de índice ímpar
-                    expected_move_san = board.san(board.parse_uci(move))  # Esse é o movimento correto
-
-                    if bot_move_san != expected_move_san:
-                        print("Bot falhou!")
-                        puzzle_solved = False
-                        correct_moves.append(expected_move_san)
-                        break
-                    else:
-                        print("Bot Acertou!")
-                        board.push(bot_move)
-                    
-                    # Adicionar movimento correto do bot até este ponto
+                if bot_move_san != expected_move_san:
+                    print("Bot falhou!")
+                    puzzle_solved = False
                     correct_moves.append(expected_move_san)
+                    break
+                else:
+                    print("Bot Acertou!")
+                    board.push(bot_move)
 
-            # Atualizar o rating usando o rating do puzzle
-            rating = update_rating(rating, puzzle_rating, puzzle_solved)
+                # Adicionar movimento correto do bot até este ponto
+                correct_moves.append(expected_move_san)
 
-            # Gravar os resultados no arquivo CSV
-            writer.writerow([puzzle_id, fen, moves, round(rating, 3), themes, game_url, " ".join(bot_moves), " ".join(correct_moves), "Acerto" if puzzle_solved else "Erro"])
-    os.system('cls')
+        # Atualizar o rating usando o rating do puzzle
+        rating = update_rating(rating, puzzle_rating, puzzle_solved)
+
+        # Gravar os resultados no arquivo CSV
+        writer.writerow([puzzle_id, fen, moves, round(rating, 3), themes, game_url, " ".join(bot_moves), " ".join(correct_moves), "Acerto" if puzzle_solved else "Erro"])
+
+    os.system('cls' if os.name == 'nt' else 'clear')
     print(f"Rating final do bot: {rating:.2f}")
 
 # Configuração do tabuleiro e execução dos puzzles
 board = chess.Board()
 
-# Solicitar tema ao usuário
-chosen_theme = input("Digite o tema desejado para os puzzles (deixe vazio para todos os temas): ").strip()
-
-
 # Iniciar resolução de puzzles com tema e rating escolhidos
-puzzle(board, 3, num_puzzles=50, theme=chosen_theme, rang=500)
+puzzle(board, 3, theme=None, rang=500)
