@@ -1,63 +1,48 @@
 import chess
 import os
-import csv
-import random
-import importlib.util
-
+import pandas as pd
 from EngineForPuzzles import get_best_move
+import csv
+import math
 
-# Função para carregar os puzzles do dicionário (todos os arquivos na pasta puzzles)
-def load_puzzles_from_dict(folder_path='puzzles'):
-    puzzles_dict = {}
-
-    # Listar todos os arquivos .py na pasta de puzzles
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".py"):
-            # Gerar o caminho completo do arquivo
-            file_path = os.path.join(folder_path, filename)
-            
-            # Carregar o arquivo Python dinamicamente
-            spec = importlib.util.spec_from_file_location(filename, file_path)
-            puzzles_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(puzzles_module)
-            
-            # A variável "puzzles_dict" deve estar dentro de cada arquivo
-            puzzles_dict.update(puzzles_module.puzzles_dict)
-
-    return puzzles_dict
+# Função para carregar os puzzles de um arquivo CSV
+def load_puzzles_from_csv(csv_filename):
+    df = pd.read_csv(csv_filename)
+    return df
 
 # Função para filtrar puzzles por tema
-def filter_puzzles_by_theme(puzzles_dict, theme):
-    return {k: v for k, v in puzzles_dict.items() if theme.lower() in (v['Themes'] or '').lower()}
+def filter_puzzles_by_theme(df, theme):
+    return df[df['Themes'].str.contains(theme, case=False, na=False)]
 
 # Função para filtrar puzzles por rating
-def filter_puzzles_by_rating(puzzles_dict, min_rating, max_rating):
-    return {k: v for k, v in puzzles_dict.items() if v['Rating'] is not None and min_rating <= v['Rating'] <= max_rating}
+def filter_puzzles_by_rating(df, min_rating, max_rating):
+    return df[(df['Rating'] >= min_rating) & (df['Rating'] <= max_rating)]
 
 # Função para pegar um puzzle aleatório e os movimentos corretos
-def get_random_fen_and_moves(puzzles_dict):
-    random_puzzle_id = random.choice(list(puzzles_dict.keys()))
-    puzzle = puzzles_dict[random_puzzle_id]
-    return puzzle['PuzzleId'], puzzle['FEN'], puzzle['Moves'], puzzle['Themes'], puzzle['GameUrl'], puzzle['Rating']
+def get_random_fen_and_moves(df):
+    random_row = df.sample(n=1)
+    return random_row['PuzzleId'].values[0], random_row['FEN'].values[0], random_row['Moves'].values[0], random_row['Themes'].values[0], random_row['GameUrl'].values[0], random_row['Rating'].values[0]
 
-# Função para calcular a nova classificação (rating) usando o sistema Elo
+ 
 def update_rating(current_rating, puzzle_rating, correct):
     K = 32
-    expected_score = 1 / (1 + 10 ** ((current_rating - puzzle_rating) / 400))
+    s = 400 / math.log(10, math.e)
+    prob = 1 / (1 + (math.e) ** ((current_rating - puzzle_rating) / s))
     if correct:
-        return current_rating + K * (1 - expected_score)
+        return current_rating + K * prob
     else:
-        return current_rating + K * (0 - expected_score)
+        return current_rating - K * (1 - prob)
 
 # Função principal para resolver os puzzles
 def puzzle(board, depth, theme=None, rang=500):
-    # Carregar os puzzles do arquivo de dicionário
-    puzzles_dict = load_puzzles_from_dict()
-
+    # Carregar os puzzles do arquivo CSV
+    csv_filename = 'lichess_db_puzzle.csv'  # Atualize o caminho do arquivo, se necessário
+    df_puzzles = load_puzzles_from_csv(csv_filename)
+    
     # Filtrar puzzles pelo tema, se fornecido
     if theme:
-        puzzles_dict = filter_puzzles_by_theme(puzzles_dict, theme)
-
+        df_puzzles = filter_puzzles_by_theme(df_puzzles, theme)
+    
     # Inicializar o rating do bot
     rating = 1500
     max_rating = rating + rang
@@ -69,13 +54,13 @@ def puzzle(board, depth, theme=None, rang=500):
         writer.writerow(['PuzzleId', 'FEN', 'Moves', 'Rating', 'Themes', 'GameUrl', 'BotMoves', 'CorrectMoves', 'Result'])
 
         # Filtrar puzzles pelo rating
-        puzzles_dict = filter_puzzles_by_rating(puzzles_dict, min_rating, max_rating)
+        df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
 
         # Obter um puzzle aleatório
-        puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(puzzles_dict)
+        puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
         move_list = moves.split()
         board.set_fen(fen)
-
+            
         # Limpar a tela no Windows ou sistemas Unix
         os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -115,7 +100,7 @@ def puzzle(board, depth, theme=None, rang=500):
                 else:
                     print("Bot Acertou!")
                     board.push(bot_move)
-
+                    
                 # Adicionar movimento correto do bot até este ponto
                 correct_moves.append(expected_move_san)
 
@@ -132,4 +117,4 @@ def puzzle(board, depth, theme=None, rang=500):
 board = chess.Board()
 
 # Iniciar resolução de puzzles com tema e rating escolhidos
-puzzle(board, 3, theme=None, rang=500)
+puzzle(board, 3, theme='short', rang=500)
