@@ -4,6 +4,7 @@ import pandas as pd
 from EngineForPuzzles import get_best_move
 import csv
 import math
+import random  # Importando o módulo random
 
 # Função para carregar os puzzles de um arquivo CSV
 def load_puzzles_from_csv(csv_filename):
@@ -45,18 +46,18 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
     
     # Inicializar o rating do bot
     rating = 1500
-    max_rating = rating + rang
     min_rating = rating - rang
+    max_rating = rating + rang
 
     # Arquivo para salvar os dados dos puzzles
     with open(f"puzzle_results_depth_{depth}_theme_{theme}_rating_{min_rating}_{max_rating}.csv", mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['PuzzleId', 'FEN', 'Moves', 'Rating', 'Themes', 'GameUrl', 'BotMoves', 'CorrectMoves', 'Result'])
 
-
         for puzzle_index in range(num_puzzles):
-            max_rating = rating + rang
+            # Recalcular min_rating e max_rating a cada puzzle
             min_rating = rating - rang
+            max_rating = rating + rang
 
             df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
 
@@ -67,9 +68,13 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
             puzzle_id, fen, moves, themes, game_url, puzzle_rating = get_random_fen_and_moves(df_puzzles)
             move_list = moves.split()
             board.set_fen(fen)
-            
 
-            os.system('cls')  # Limpar a tela no Windows
+            # Verificar se a posição FEN é válida
+            if not board.is_valid():
+                print(f"Posição FEN inválida para o puzzle {puzzle_id}.")
+                continue
+
+            os.system('clear')  # Limpar a tela no Unix
 
             print(f"Puzzle {puzzle_index + 1}: {puzzle_id}")
 
@@ -115,18 +120,17 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
                     # Adicionar movimento correto do bot até este ponto
                     correct_moves.append(expected_move_san)
 
-
             # Atualizar o rating usando o rating do puzzle
             rating = update_rating(rating, puzzle_rating, puzzle_solved)
 
             # Gravar os resultados no arquivo CSV
             writer.writerow([puzzle_id, fen, moves, round(rating, 3), themes, game_url, " ".join(bot_moves), " ".join(correct_moves), "Acerto" if puzzle_solved else "Erro"])
-    os.system('cls')
+
+    os.system('clear')
     print(f"Rating final do bot: {rating:.2f}")
 
 # Configuração do tabuleiro e execução dos puzzles
 board = chess.Board()
 
-
 # Iniciar resolução de puzzles com tema e rating escolhidos
-puzzle(board, 3, num_puzzles=50, theme='short', rang=500)
+puzzle(board, 3, num_puzzles=10, theme=None, rang=500)
