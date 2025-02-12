@@ -1,12 +1,14 @@
 from Engine import get_best_move
 import chess
 import time
+import os
+import random
 
 
 board = chess.Board()
 
 def save_game(moves, white, black):
-    filename = f"game_{time.strftime('%Y%m%d_%H%M%S')}.pgn"
+    filename = f"game_AIvsAI.pgn"
 
     if board.is_checkmate():
         if board.turn == chess.BLACK:
@@ -44,18 +46,22 @@ def save_game(moves, white, black):
 
 # Function to test AI vs AI
 def ai_vs_ai(depth_ai1, depth_ai2):
+    os.system('cls')
     sequence = []
 
+    depth_white = random.choice([depth_ai1, depth_ai2])
+    depth_black = depth_ai2 if depth_white == depth_ai1 else depth_ai1
+
     while not board.is_game_over():
-        print(board)
         if board.turn == chess.WHITE:
-            best_move = get_best_move(board, depth_ai1, sequence)
+            best_move = get_best_move(board, depth_white, sequence)
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
-            best_move = get_best_move(board, depth_ai2, sequence)
+            best_move = get_best_move(board, depth_black, sequence)
             sequence.append(board.san(best_move))
             board.push(best_move)
+        print(board)
         print()
 
 
@@ -64,12 +70,12 @@ def ai_vs_ai(depth_ai1, depth_ai2):
         print("Checkmate!")
     elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
         print("Draw!")
-    save_game(sequence, f"AI (Depth {depth_ai1})",f"AI (Depth {depth_ai2})")
+    save_game(sequence, f"AI (Depth {depth_white})",f"AI (Depth {depth_black})")
 
 
 
 # Start AI vs AI game
 start = time.time()
-ai_vs_ai(3,2)
+ai_vs_ai(4, 2)
 elapsed = time.time() - start
 print(f'Time to finish this game: {elapsed:.3f} seconds')

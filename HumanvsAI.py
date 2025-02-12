@@ -7,8 +7,6 @@ import time
 board = chess.Board()
 
 def save_game(moves, white, black):
-    filename = f"game_{time.strftime('%d-%m-%Y_%H:%M:%S')}.pgn"
-
     if board.is_checkmate():
         if board.turn == chess.BLACK:
             result = "1-0"
@@ -26,7 +24,7 @@ def save_game(moves, white, black):
         f"[Black \"{black}\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
-
+    filename = f"game.pgn"
     with open(filename, 'w') as file:
         file.write(pgn_header)
 
@@ -56,7 +54,7 @@ def ai_play(depth):
         if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (board.turn == chess.BLACK and black == f"AI (Depth {depth})"):
             print(f"AI's turn. Current board:\n{board}")
             best_move = get_best_move(board, depth, sequence)  # Adjust depth as needed
-            print(f"AI move: {best_move}")
+            print(f"AI move: {board.san(best_move)}")
             sequence.append(board.san(best_move))
             board.push(best_move)
 

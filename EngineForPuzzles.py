@@ -14,30 +14,16 @@ def is_endgame(board):
 # Avaliação do valor de uma peça com base na posição no tabuleiro
 def piece_value(board, square):
     piece = board.piece_at(square)
-    if not piece:
+    if not piece or piece.symbol().upper() == 'K':
         return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9, 'K': 0}[piece.symbol().upper()]
-    mobility = len(list(board.attacks(square))) * 0.1
-    return (value + mobility) if piece.color == chess.WHITE else -(value + mobility)
-
-# Função para calcular a distância entre duas casas
-def square_distance(square1, square2):
-    return abs(chess.square_file(square1) - chess.square_file(square2)) + abs(chess.square_rank(square1) - chess.square_rank(square2))
-
-# Avaliação da atividade do rei
-def evaluate_king_activity(board):
-    king_square = board.king(chess.WHITE if board.turn == chess.WHITE else chess.BLACK)
-    opponent_king_square = board.king(chess.BLACK if board.turn == chess.WHITE else chess.WHITE)
-    center_squares = [chess.E4, chess.D4, chess.E5, chess.D5]
-    king_to_center = min(square_distance(king_square, sq) for sq in center_squares)
-    opponent_king_to_center = min(square_distance(opponent_king_square, sq) for sq in center_squares)
-    return (opponent_king_to_center - king_to_center) * 0.1
+    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+    return value if piece.color == chess.WHITE else -value
 
 # Função principal de avaliação do tabuleiro
 def evaluate_board(board):
     if board.is_game_over():
         if board.is_checkmate():
-            return float('inf') if board.turn == chess.BLACK else -float('inf')
+            return 99999 if board.turn == chess.BLACK else -99999
         elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
             return 0
 
@@ -67,17 +53,15 @@ def evaluate_positional(board):
         else:
             table = piece_tables.get(piece.symbol().upper())
 
-        if piece.color == chess.BLACK:
+        if piece.color == chess.WHITE:
             table = get_flipped_table(piece)
 
         if table:
             table_index = square
-            # Corrigido para usar a indexação correta na tabela
             if piece.color == chess.WHITE:
-                score += (table[table_index]) * 0.1
+                score += table[table_index]
             else:
-                score -= (table[table_index]) * 0.1
-        
+                score -= table[table_index]
     return score
 
 # Função que determina a prioridade dos movimentos
@@ -102,7 +86,7 @@ def quiescence(alpha, beta, board):
     if alpha < stand_pat:
         alpha = stand_pat
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=True)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         if board.is_capture(move) or board.gives_check(move):
             board.push(move)
@@ -123,12 +107,13 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
 
     if depth == 0 or board.is_game_over():
         score = evaluate_board(board)
+        # score = quiescence(-float('inf'), float('inf'), board)
         transposition_table[board_hash] = score
         return score
 
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     if is_maximizing:
-        max_eval = -float('inf') if board.turn == chess.WHITE else float('inf')
+        max_eval = -float('inf')
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board)
@@ -140,7 +125,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         transposition_table[board_hash] = max_eval
         return max_eval
     else:
-        min_eval = float('inf') if board.turn == chess.WHITE else -float('inf')
+        min_eval = float('inf')
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board)
@@ -155,13 +140,13 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
 # Função para obter o melhor movimento
 def get_best_move(board, depth):
     best_move = None
-    best_score = -float('inf') if board.turn == chess.BLACK else float('inf')
+    best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         board.push(move)
         score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board)
         board.pop()
-        if score > best_score:
+        if score > best_score if board.turn == chess.WHITE else score < best_score:
             best_score = score
             best_move = move
     return best_move
