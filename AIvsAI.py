@@ -8,7 +8,7 @@ import random
 board = chess.Board()
 
 def save_game(moves, white, black):
-    filename = f"game_AIvsAI.pgn"
+    filename = f"Games/game_{time.strftime('%Y_%m_%d_%H_%m_%s')}.pgn"
 
     if board.is_checkmate():
         if board.turn == chess.BLACK:

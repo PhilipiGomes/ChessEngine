@@ -24,7 +24,7 @@ def save_game(moves, white, black):
         f"[Black \"{black}\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
-    filename = f"game.pgn"
+    filename = f"Games/game_{time.strftime('%Y_%m_%d_%H_%m_%s')}.pgn"
     with open(filename, 'w') as file:
         file.write(pgn_header)
 
@@ -80,5 +80,5 @@ def ai_play(depth):
 
 
 
-# Start AI vs Human game
+
 ai_play(2)
