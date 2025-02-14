@@ -22,9 +22,11 @@ def save_game(moves, white, black):
         f"[Round \"1\"]\n"
         f"[White \"{white}\"]\n"
         f"[Black \"{black}\"]\n"
+        f"[WhiteElo \"1500\"]\n"
+        f"[BlackElo \"1500\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
-    filename = f"Games/game_{time.strftime('%Y_%m_%d_%H_%m_%s')}.pgn"
+    filename = f"Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
     with open(filename, 'w') as file:
         file.write(pgn_header)
 
@@ -52,14 +54,14 @@ def ai_play(depth):
 
     while not board.is_game_over():
         if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (board.turn == chess.BLACK and black == f"AI (Depth {depth})"):
-            print(f"AI's turn. Current board:\n{board}")
-            best_move = get_best_move(board, depth, sequence)  # Adjust depth as needed
+            print(f"AI's turn.")
+            best_move = get_best_move(board, depth, sequence, {})  # Adjust depth as needed
             print(f"AI move: {board.san(best_move)}")
             sequence.append(board.san(best_move))
             board.push(best_move)
 
         else:
-            print(f"Your turn. Current board:\n{board}")
+            print(f"Your turn.")
             move_san = input("Enter your move (in SAN format, e.g., e4): ")
             try:
                 move = chess.Board.parse_san(board, move_san)
@@ -81,4 +83,4 @@ def ai_play(depth):
 
 
 
-ai_play(2)
+ai_play(4)

@@ -146,7 +146,7 @@ def get_best_move(board, depth):
         board.push(move)
         score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board)
         board.pop()
-        if score > best_score if board.turn == chess.WHITE else score < best_score:
+        if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
     return best_move

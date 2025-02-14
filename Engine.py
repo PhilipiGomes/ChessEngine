@@ -5,9 +5,6 @@ from Tables import piece_tables
 from Openings import openings
 
 
-transposition_table = {}
-
-
 # Select a random opening
 def select_random_opening(ope):
     if not ope:
@@ -123,8 +120,9 @@ def quiescence(alpha, beta, board):
     return alpha
 
 # Função principal de busca Minimax com poda alfa-beta
-def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
+def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board, transposition_table):
     board_hash = zobrist_hash(board)
+    transpos_table = transposition_table
 
     if board_hash in transposition_table:
         return transposition_table[board_hash]
@@ -140,7 +138,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         max_eval = -float('inf')
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board, transpos_table)
             board.pop()
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
@@ -152,7 +150,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         min_eval = float('inf')
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board, transpos_table)
             board.pop()
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
@@ -163,11 +161,16 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
 
 
 # Get the best move for the AI
-def get_best_move(board, depth, sequence):
+def get_best_move(board, depth, sequence, transpositon_table):
     if sequence or board.fen() == chess.STARTING_FEN:
         filtered_openings = filter_openings(openings, sequence)
         if filtered_openings:
             opening = random.choice(list(filtered_openings.items()))
+            if opening[0] == "Barnes Opening: Fool's Mate":
+                if random.randint(1,1000) == random.randint(1,1000):
+                    pass
+                else:
+                    opening = random.choice(list(filtered_openings.items()))
             move = opening[1][len(sequence)]
             return chess.Move.from_uci(board.parse_san(san=move).uci())
 
@@ -176,9 +179,9 @@ def get_best_move(board, depth, sequence):
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         board.push(move)
-        score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board)
+        score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board, transpositon_table)
         board.pop()
-        if score > best_score if board.turn == chess.WHITE else score < best_score:
+        if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
     return best_move
