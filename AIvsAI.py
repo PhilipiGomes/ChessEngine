@@ -76,14 +76,12 @@ def ai_vs_ai(depth_ai1, depth_ai2):
             sequence.append(board.san(best_move))
             board.push(best_move)
     os.system('cls')
-    print(sequence)
 
     if board.is_checkmate():
-        print("Checkmate!")
+        print("Checkmate!", "White Won!" if board.turn == chess.BLACK else "Black Won!")
     elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
         print("Draw!")
     
-    print(len(list(transposition_table_ai1.items())), len(list(transposition_table_ai2.items())))
     save_game(sequence, f"AI (Depth {depth_white})", f"AI (Depth {depth_black})")
 
 # Iniciar o jogo AI vs AI
