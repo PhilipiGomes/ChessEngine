@@ -1,0 +1,77 @@
+[NEAT]
+# NEAT algorithm settings
+fitness_criterion = max
+fitness_threshold = 100.0
+no_fitness_termination = False
+pop_size = 100
+reset_on_extinction = True
+
+
+[DefaultGenome]
+# Genome settings
+num_inputs = 64
+num_outputs = 1
+num_hidden = 32
+activation_function = sigmoid
+activation_default = sigmoid
+activation_mutate_rate = 0.2
+activation_options = sigmoid tanh relu
+aggregation_default = sum
+aggregation_mutate_rate = 0.2
+aggregation_options = sum product min max mean median maxabs
+bias_init_mean = 0.0
+bias_init_stdev = 1.0
+bias_init_type = gaussian
+bias_max_value = 1.0
+bias_min_value = -1.0
+bias_mutate_power = 0.5
+bias_mutate_rate = 0.3
+bias_replace_rate = 0.2
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient = 0.5
+conn_add_prob = 0.1
+conn_delete_prob = 0.05
+enabled_default = True
+enabled_mutate_rate = 0.1
+enabled_rate_to_false_add = 0.05
+enabled_rate_to_true_add = 0.05
+feed_forward = True
+initial_connection = full_direct
+node_add_prob = 0.02
+node_delete_prob = 0.01
+response_init_mean = 0.0
+response_init_stdev = 1.0
+response_init_type = gaussian
+response_max_value = 1.0
+response_min_value = -1.0
+response_mutate_power = 0.5
+response_mutate_rate = 0.3
+response_replace_rate = 0.2
+single_structural_mutation = False
+structural_mutation_surer = default
+weight_init_mean = 0.0
+weight_init_stdev = 1.0
+weight_init_type = gaussian
+weight_max_value = 1.0
+weight_min_value = -1.0
+weight_mutate_power = 0.5
+weight_mutate_rate = 0.3
+weight_replace_rate = 0.2
+
+
+[DefaultReproduction]
+elitism = 2
+survival_threshold = 0.2
+min_species_size = 2
+
+
+[DefaultSpeciesSet]
+# Species settings
+compatibility_threshold = 3.0
+
+[DefaultStagnation]
+# Stagnation settings
+species_fitness_func = mean
+max_stagnation = 15
+species_elitism = 0
+
