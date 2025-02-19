@@ -1,4 +1,4 @@
-from Engine import *
+import Engine
 import chess
 import random
 import time
@@ -26,7 +26,7 @@ def save_game(moves, white, black):
         f"[BlackElo \"1500\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
-    filename = f"Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
+    filename = f"Games/game_{white}_{black}.pgn"
     with open(filename, 'w') as file:
         file.write(pgn_header)
 
@@ -55,13 +55,12 @@ def ai_play(depth):
     while not board.is_game_over():
         if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (board.turn == chess.BLACK and black == f"AI (Depth {depth})"):
             print(f"AI's turn.")
-            best_move = get_best_move(board, depth, sequence, {})  # Adjust depth as needed
+            best_move = Engine.get_best_move(board, depth, sequence)
             print(f"AI move: {board.san(best_move)}")
             sequence.append(board.san(best_move))
             board.push(best_move)
 
         else:
-            print(f"Your turn.")
             move_san = input("Enter your move (in SAN format, e.g., e4): ")
             try:
                 move = chess.Board.parse_san(board, move_san)
@@ -78,8 +77,6 @@ def ai_play(depth):
     elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
         print("Draw!")
     save_game(sequence, white, black)
-
-
 
 
 

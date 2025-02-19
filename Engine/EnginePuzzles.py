@@ -1,30 +1,10 @@
 import chess
-import random
 from chess.polyglot import zobrist_hash
 from Tables import piece_tables
-from Openings import openings
 
 transposition_table = {}
 
-# Select a random opening
-def select_random_opening(ope):
-    if not ope:
-        print("No openings available.")
-        return None
-    return random.choice(list(ope.items()))
-
-# Filter openings based on the current sequence of moves
-def filter_openings(op, sequence):
-    if sequence:
-        filtered_openings = {}
-        for opening, moves in op.items():
-            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
-                filtered_openings[opening] = moves
-        return filtered_openings
-    else:
-        return op
-
-# Determine if the game is in the endgame
+# Função que determina se estamos no final de jogo
 def is_endgame(board):
     piece_map = board.piece_map()
     minor_pieces = sum(1 for p in piece_map.values() if p.piece_type in {chess.BISHOP, chess.KNIGHT})
@@ -39,11 +19,11 @@ def piece_value(board, square):
     value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
     return value if piece.color == chess.WHITE else -value
 
-# Evaluate the board with improved evaluation logic
+# Função principal de avaliação do tabuleiro
 def evaluate_board(board):
     if board.is_game_over():
         if board.is_checkmate():
-            return float('inf') if board.turn == chess.BLACK else -float('inf')
+            return 99999 if board.turn == chess.BLACK else -99999
         elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
             return 0
 
@@ -51,15 +31,13 @@ def evaluate_board(board):
     positional_score = evaluate_positional(board)
     return material_score + positional_score
 
-# Function to flip the piece tables (inverting the values for black)
+# Função para virar a tabela de avaliação para peças pretas
 def get_flipped_table(piece):
     table_key = piece.symbol().upper()
-    # Flipping the table for black pieces
     flipped_table = piece_tables.get(table_key, [])
     if flipped_table:
-        flipped_table = flipped_table[::-1]  # Reverse the table
+        flipped_table = flipped_table[::-1]
     return flipped_table
-
 
 # Função que avalia a posição das peças com base nas tabelas
 def evaluate_positional(board):
@@ -86,7 +64,7 @@ def evaluate_positional(board):
                 score -= table[table_index]
     return score
 
-# Refined move priority function
+# Função que determina a prioridade dos movimentos
 def move_priority(board, move):
     if board.gives_check(move):
         return 13
@@ -100,10 +78,9 @@ def move_priority(board, move):
         return 2
     return 1
 
-# Quiescence search with more tactical depth
+# Função de busca de quiescência
 def quiescence(alpha, beta, board):
     stand_pat = evaluate_board(board)
-    
     if stand_pat >= beta:
         return beta
     if alpha < stand_pat:
@@ -160,21 +137,8 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         transposition_table[board_hash] = min_eval
         return min_eval
 
-
-# Get the best move for the AI
-def get_best_move(board, depth, sequence):
-    if sequence or board.fen() == chess.STARTING_FEN:
-        filtered_openings = filter_openings(openings, sequence)
-        if filtered_openings:
-            opening = random.choice(list(filtered_openings.items()))
-            if opening[0] == "Barnes Opening: Fool's Mate":
-                if random.randint(1,1000) == random.randint(1,1000):
-                    pass
-                else:
-                    opening = random.choice(list(filtered_openings.items()))
-            move = opening[1][len(sequence)]
-            return chess.Move.from_uci(board.parse_san(san=move).uci())
-
+# Função para obter o melhor movimento
+def get_best_move(board, depth):
     best_move = None
     best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)

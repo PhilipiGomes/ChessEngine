@@ -4,7 +4,6 @@ from chess.polyglot import zobrist_hash
 from Tables import piece_tables
 from Openings import openings
 
-transposition_table = {}
 
 # Select a random opening
 def select_random_opening(ope):
@@ -89,7 +88,7 @@ def evaluate_positional(board):
 # Refined move priority function
 def move_priority(board, move):
     if board.gives_check(move):
-        return 13
+        return 4
     elif board.is_capture(move):
         attacker = board.piece_at(move.from_square)
         victim = board.piece_at(move.to_square)
@@ -97,7 +96,7 @@ def move_priority(board, move):
         attacker_value = piece_value(board, move.from_square) if attacker else 0
         return 3 + (victim_value - attacker_value)
     elif board.is_attacked_by(not board.turn, move.to_square):
-        return 2
+        return 2.5
     return 1
 
 # Quiescence search with more tactical depth
@@ -109,7 +108,7 @@ def quiescence(alpha, beta, board):
     if alpha < stand_pat:
         alpha = stand_pat
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         if board.is_capture(move) or board.gives_check(move):
             board.push(move)
@@ -122,8 +121,9 @@ def quiescence(alpha, beta, board):
     return alpha
 
 # Função principal de busca Minimax com poda alfa-beta
-def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
+def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board, transposition_table):
     board_hash = zobrist_hash(board)
+    transpos_table = transposition_table
 
     if board_hash in transposition_table:
         return transposition_table[board_hash]
@@ -134,12 +134,12 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         transposition_table[board_hash] = score
         return score
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     if is_maximizing:
         max_eval = -float('inf')
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board, transpos_table)
             board.pop()
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
@@ -151,7 +151,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
         min_eval = float('inf')
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board, transpos_table)
             board.pop()
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
@@ -162,7 +162,7 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board):
 
 
 # Get the best move for the AI
-def get_best_move(board, depth, sequence):
+def get_best_move(board, depth, sequence, transpositon_table):
     if sequence or board.fen() == chess.STARTING_FEN:
         filtered_openings = filter_openings(openings, sequence)
         if filtered_openings:
@@ -173,16 +173,18 @@ def get_best_move(board, depth, sequence):
                 else:
                     opening = random.choice(list(filtered_openings.items()))
             move = opening[1][len(sequence)]
+            print(board.san(board.parse_san(san=move)), '(Opening Move)')
             return chess.Move.from_uci(board.parse_san(san=move).uci())
 
     best_move = None
     best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
     for move in moves:
         board.push(move)
-        score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board)
+        score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board, transpositon_table)
         board.pop()
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
+    print(board.san(best_move), round(best_score, 3))
     return best_move
