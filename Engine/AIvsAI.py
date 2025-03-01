@@ -8,7 +8,8 @@ board = chess.Board()
 
 # Função para salvar o jogo
 def save_game(moves, white, black):
-    filename = f"Games/{time.strftime('%Y_%m_%d')}/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+    filename = f"Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     if board.is_checkmate():
         if board.turn == chess.BLACK:
@@ -63,29 +64,30 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_white, sequence, transposition_table_ai1)
-            # print(board.san(best_move))
+            print(board.san(best_move))
             if best_move == None:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
             best_move = get_best_move(board, depth_black, sequence, transposition_table_ai2)
-            # print(board.san(best_move))
+            print(board.san(best_move))
             if best_move == None:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
-    os.system('cls')
+
     print(f'White: AI (Depth {depth_white}), Black: AI (Depth {depth_black})')
 
-    result = board.result()
-
-    print(result)
+    if board.is_checkmate():
+        print("Checkmate!", "White Won!" if board.turn == chess.BLACK else "Black Won!")
+    elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
+        print("Draw!")
     
     save_game(sequence, f"AI (Depth {depth_white})", f"AI (Depth {depth_black})")
 
 # Iniciar o jogo AI vs AI
 start = time.time()
-ai_vs_ai(3, 2)
+ai_vs_ai(2, 2)
 elapsed = time.time() - start
 print(f'Time to finish this game: {elapsed:.3f} seconds')

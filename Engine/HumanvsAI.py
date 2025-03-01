@@ -27,7 +27,7 @@ def save_game(moves, white, black):
         f"[BlackElo \"1500\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
-    filename = f"Games/game_{white}_{black}.pgn"
+    filename = f"Engine/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as file:
         file.write(pgn_header)
@@ -63,7 +63,7 @@ def ai_play(depth):
             board.push(best_move)
 
         else:
-            move_san = input("Enter your move in SAN format: ")
+            move_san = input("Enter your move (in SAN format, e.g., e4): ")
             try:
                 move = chess.Board.parse_san(board, move_san)
                 if move in board.legal_moves:
@@ -81,5 +81,5 @@ def ai_play(depth):
     save_game(sequence, white, black)
 
 
-os.system('cls')
+
 ai_play(2)

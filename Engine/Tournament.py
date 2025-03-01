@@ -27,10 +27,11 @@ def update_rating(rating1, rating2, result1, result2, k=32):
 # Função para salvar o jogo
 def save_game(moves, white, black, game_number, ratings):
     filename = f"Games/Tournament/game_{game_number}_{white}_{black}.pgn"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     # Obter o rating atual das IAs
-    white_rating = ratings.items()[1]
-    black_rating = ratings.items()[1]
+    white_rating = ratings.get(white, 1500)
+    black_rating = ratings.get(black, 1500)
 
     if board.is_checkmate():
         if board.turn == chess.BLACK:
@@ -79,13 +80,13 @@ def ai_vs_ai(depth_ai1, depth_ai2, results, ratings, transposition_table_ai1, tr
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_white, sequence, transposition_table_ai1)
-            if best_move == None:
+            if not best_move:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
             best_move = get_best_move(board, depth_black, sequence, transposition_table_ai2)
-            if best_move == None:
+            if not best_move:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
@@ -125,13 +126,11 @@ transposition_tables = {1: {}, 2: {}, 3: {}, 4: {}}
 
 # Inicializar contador de jogos
 game_number = 1
-match_size = 4
-max_depth = 4
 
 # Jogar as partidas entre as IAs
-for depth1 in range(1, max_depth + 1):
-    for depth2 in range(depth1 + 1, max_depth + 1):
-        for _ in range(match_size):
+for depth1 in range(1, 5):
+    for depth2 in range(depth1 + 1, 5):
+        for _ in range(4):
             ai_vs_ai(depth1, depth2, results, ratings, transposition_tables[depth1], transposition_tables[depth2], game_number)
             game_number += 1  # Incrementa o número da partida após cada jogo
 
