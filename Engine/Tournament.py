@@ -137,6 +137,6 @@ for depth1 in range(2, 5):
 
 # Exibir a tabela de classificação
 print("\nTabela de Classificação:")
-print("   Depth    | Vitórias | Empates | Derrotas | Rating")
+print("   AI       | Vitórias | Empates | Derrotas | Rating")
 for depth in sorted(ratings.keys(), key=lambda x: ratings[x], reverse=True):
     print(f"{depth}| {results[depth]['wins']}       | {results[depth]['draws']}     | {results[depth]['losses']}     | {ratings[depth]:.2f}")
