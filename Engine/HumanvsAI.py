@@ -82,4 +82,4 @@ def ai_play(depth):
 
 
 
-ai_play(2)
+ai_play(4)

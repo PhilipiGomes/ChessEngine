@@ -17,7 +17,7 @@ def filter_openings(op, sequence):
     if sequence:
         filtered_openings = {}
         for opening, moves in op.items():
-            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
+            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else True):
                 filtered_openings[opening] = moves
         return filtered_openings
     else:
@@ -161,19 +161,31 @@ def minimax_alpha_beta(depth, alpha, beta, is_maximizing, board, transposition_t
         return min_eval
 
 
+openings_names = []
+seq_with_move = []
+
 # Get the best move for the AI
 def get_best_move(board, depth, sequence, transpositon_table):
     if sequence or board.fen() == chess.STARTING_FEN:
         filtered_openings = filter_openings(openings, sequence)
         if filtered_openings:
+            seq_with_move = sequence.copy()
             opening = random.choice(list(filtered_openings.items()))
-            if opening[0] == "Barnes Opening: Fool's Mate":
+            if opening[0] == "Barnes Opening: Fool's Mate" or opening[0] == "Scotch Game: Sea-Cadet Mate":
                 if random.randint(1,1000) == random.randint(1,1000):
                     pass
                 else:
                     opening = random.choice(list(filtered_openings.items()))
             move = opening[1][len(sequence)]
-            print(board.san(board.parse_san(san=move)), opening[0])
+            seq_with_move.append(move)
+            for name, moves in filtered_openings.items():
+                if seq_with_move == moves:
+                    opening_name = name
+                    openings_names.append(name)
+                    break
+                else:
+                    opening_name = openings_names[-1]
+            print(board.san(board.parse_san(san=move)), opening_name)
             return chess.Move.from_uci(board.parse_san(san=move).uci())
 
     best_move = None
@@ -186,5 +198,5 @@ def get_best_move(board, depth, sequence, transpositon_table):
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
-    print(board.san(best_move), round(best_score, 3))
+    print(board.san(best_move), round(best_score, 5))
     return best_move

@@ -99,43 +99,44 @@ def ai_vs_ai(depth_ai1, depth_ai2, results, ratings, transposition_table_ai1, tr
 
     # Atualizar as estatísticas
     if result == '1-0':  # White win
-        results[depth_white]['wins'] += 1
-        results[depth_black]['losses'] += 1
-        ratings[depth_white] = update_rating(ratings[depth_white], ratings[depth_black], 1, 0)[0]
-        ratings[depth_black] = update_rating(ratings[depth_white], ratings[depth_black], 1, 0)[1]
+        results[f"AI (Depth {depth_white})"]['wins'] += 1
+        results[f"AI (Depth {depth_black})"]['losses'] += 1
+        ratings[f"AI (Depth {depth_white})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 1, 0)[0]
+        ratings[f"AI (Depth {depth_black})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 1, 0)[1]
     elif result == '0-1':  # Black win
-        results[depth_white]['losses'] += 1
-        results[depth_black]['wins'] += 1
-        ratings[depth_white] = update_rating(ratings[depth_white], ratings[depth_black], 0, 1)[0]
-        ratings[depth_black] = update_rating(ratings[depth_white], ratings[depth_black], 0, 1)[1]
+        results[f"AI (Depth {depth_white})"]['losses'] += 1
+        results[f"AI (Depth {depth_black})"]['wins'] += 1
+        ratings[f"AI (Depth {depth_white})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 0, 1)[0]
+        ratings[f"AI (Depth {depth_black})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 0, 1)[1]
     else:  # Draw
-        results[depth_white]['draws'] += 1
-        results[depth_black]['draws'] += 1
-        ratings[depth_white] = update_rating(ratings[depth_white], ratings[depth_black], 0.5, 0.5)[0]
-        ratings[depth_black] = update_rating(ratings[depth_white], ratings[depth_black], 0.5, 0.5)[1]
+        results[f"AI (Depth {depth_white})"]['draws'] += 1
+        results[f"AI (Depth {depth_black})"]['draws'] += 1
+        ratings[f"AI (Depth {depth_white})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 0.5, 0.5)[0]
+        ratings[f"AI (Depth {depth_black})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 0.5, 0.5)[1]
 
 # Inicializar resultados e ratings
-ratings = {1: 1500, 2: 1500, 3: 1500, 4: 1500}
-results = {1: {'wins': 0, 'draws': 0, 'losses': 0},
-           2: {'wins': 0, 'draws': 0, 'losses': 0},
-           3: {'wins': 0, 'draws': 0, 'losses': 0},
-           4: {'wins': 0, 'draws': 0, 'losses': 0}}
+ratings = {"AI (Depth 2)": 1500, "AI (Depth 3)": 1500, "AI (Depth 4)": 1500}
+
+results = {"AI (Depth 2)": {'wins': 0, 'draws': 0, 'losses': 0},
+           "AI (Depth 3)": {'wins': 0, 'draws': 0, 'losses': 0},
+           "AI (Depth 4)": {'wins': 0, 'draws': 0, 'losses': 0}
+           }
 
 # Inicializar tabelas de transposição
-transposition_tables = {1: {}, 2: {}, 3: {}, 4: {}}
+transposition_tables = {2: {}, 3: {}, 4: {}}
 
 # Inicializar contador de jogos
 game_number = 1
 
 # Jogar as partidas entre as IAs
-for depth1 in range(1, 5):
+for depth1 in range(2, 5):
     for depth2 in range(depth1 + 1, 5):
-        for _ in range(4):
+        for _ in range(1):
             ai_vs_ai(depth1, depth2, results, ratings, transposition_tables[depth1], transposition_tables[depth2], game_number)
             game_number += 1  # Incrementa o número da partida após cada jogo
 
 # Exibir a tabela de classificação
 print("\nTabela de Classificação:")
-print("Depth | Vitórias | Empates | Derrotas | Rating")
+print("   Depth    | Vitórias | Empates | Derrotas | Rating")
 for depth in sorted(ratings.keys(), key=lambda x: ratings[x], reverse=True):
-    print(f"{depth}     | {results[depth]['wins']}        | {results[depth]['draws']}      | {results[depth]['losses']}      | {ratings[depth]:.2f}")
+    print(f"{depth}| {results[depth]['wins']}       | {results[depth]['draws']}     | {results[depth]['losses']}     | {ratings[depth]:.2f}")
