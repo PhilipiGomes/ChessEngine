@@ -40,7 +40,7 @@ You can play In text-like running the HumanvsAI script:
 python Engine/HumanvsAI.py
 ```
 
-Depending of your preference, you can run other sripts.
+Depending on your preference, you can run other scripts.
 
 ## Contributing
 

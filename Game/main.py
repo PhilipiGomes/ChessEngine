@@ -1,6 +1,6 @@
 import chess
 import chess.engine
-from ChessEngine\Engine import Engine
+from Engine import Engine
 import pygame as p
 import random
 

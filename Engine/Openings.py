@@ -2191,7 +2191,7 @@ openings = {
     "Scotch Game: Sea-Cadet Mate": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'c3', 'dxc3', 'Nxc3', 'd6', 'Bc4', 'Bg4', 'O-O', 'Ne5', 'Nxe5', 'Bxd1', 'Bxf7+', 'Ke7', 'Nd5#'],
     "Scotch Game: Vitzthum Attack": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Bc4', 'Bc5', 'Ng5', 'Nh6', 'Qh5'],
     "Scotch Game3": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4'],
-    "Scotch Gam4": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Qh4', 'Nb5', 'Bb4+', 'Bd2'],
+    "Scotch Game4": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Qh4', 'Nb5', 'Bb4+', 'Bd2'],
     "Scotch Game: Alekhine Gambit": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Nf6', 'e5'],
     "Scotch Game: Blumenfeld Attack": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Bc5', 'Be3', 'Qf6', 'Nb5'],
     "Scotch Game: Braune Variation": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Qh4', 'Be3'],
