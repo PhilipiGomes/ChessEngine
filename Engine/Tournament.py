@@ -26,7 +26,7 @@ def update_rating(rating1, rating2, result1, result2, k=32):
 
 # Função para salvar o jogo
 def save_game(moves, white, black, game_number, ratings):
-    filename = f"Games/Tournament/game_{game_number}_{white}_{black}.pgn"
+    filename = f"Engine/Games/Tournament/game_{game_number}_{white}_{black}.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     # Obter o rating atual das IAs
@@ -45,11 +45,11 @@ def save_game(moves, white, black, game_number, ratings):
         f"[Event \"AI vs AI Game\"]\n"
         f"[Site \"Local\"]\n"
         f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
-        f"[Round \"1\"]\n"
+        f"[Round \"{game_number}\"]\n"
         f"[White \"{white}\"]\n"
         f"[Black \"{black}\"]\n"
-        f"[WhiteElo \"{white_rating}\"]\n"
-        f"[BlackElo \"{black_rating}\"]\n"
+        f"[WhiteElo \"{round(white_rating, 3)}\"]\n"
+        f"[BlackElo \"{round(black_rating, 3)}\"]\n"
         f"[Result \"{result}\"]\n\n"
     )
 
@@ -74,18 +74,21 @@ def ai_vs_ai(depth_ai1, depth_ai2, results, ratings, transposition_table_ai1, tr
     depth_white = random.choice([depth_ai1, depth_ai2])
     depth_black = depth_ai2 if depth_white == depth_ai1 else depth_ai1
 
+    print(f'Game {game_number} of {num_games}:')
     print(f'White: AI (Depth {depth_white}), Black: AI (Depth {depth_black})')
     board.reset()
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_white, sequence, transposition_table_ai1)
+            # Callback: se não encontrar movimento válido, faz um aleatório.
             if not best_move:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
             best_move = get_best_move(board, depth_black, sequence, transposition_table_ai2)
+            # Callback: se não encontrar movimento válido, faz um aleatório.
             if not best_move:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
@@ -115,23 +118,46 @@ def ai_vs_ai(depth_ai1, depth_ai2, results, ratings, transposition_table_ai1, tr
         ratings[f"AI (Depth {depth_black})"] = update_rating(ratings[f"AI (Depth {depth_white})"], ratings[f"AI (Depth {depth_black})"], 0.5, 0.5)[1]
 
 # Inicializar resultados e ratings
-ratings = {"AI (Depth 2)": 1500, "AI (Depth 3)": 1500, "AI (Depth 4)": 1500}
+ratings = {
+    "AI (Depth 1)": 1500,
+    "AI (Depth 2)": 1500,
+    "AI (Depth 3)": 1500, 
+    "AI (Depth 4)": 1500, 
+    "AI (Depth 5)": 1500, 
+    "AI (Depth 6)": 1500,
+    "AI (Depth 7)": 1500,
+    "AI (Depth 8)": 1500,
+    "AI (Depth 9)": 1500,
+    "AI (Depth 10)": 1500
+    }
 
-results = {"AI (Depth 2)": {'wins': 0, 'draws': 0, 'losses': 0},
-           "AI (Depth 3)": {'wins': 0, 'draws': 0, 'losses': 0},
-           "AI (Depth 4)": {'wins': 0, 'draws': 0, 'losses': 0}
-           }
+results = {
+    "AI (Depth 1)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 2)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 3)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 4)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 5)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 6)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 7)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 8)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 9)":  {'wins': 0, 'draws': 0, 'losses': 0},
+    "AI (Depth 10)": {'wins': 0, 'draws': 0, 'losses': 0},
+    }
 
 # Inicializar tabelas de transposição
-transposition_tables = {2: {}, 3: {}, 4: {}}
+transposition_tables = {1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}, 9:{}, 10: {}}
 
 # Inicializar contador de jogos
 game_number = 1
 
+depths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+n_rounds = 3
+num_games = len(depths) * (len(depths) - 1) * n_rounds // 2
+
 # Jogar as partidas entre as IAs
-for depth1 in range(2, 5):
-    for depth2 in range(depth1 + 1, 5):
-        for _ in range(1):
+for depth1 in depths:
+    for depth2 in depths[depths.index(depth1)+1:]:
+        for _ in range(n_rounds):
             ai_vs_ai(depth1, depth2, results, ratings, transposition_tables[depth1], transposition_tables[depth2], game_number)
             game_number += 1  # Incrementa o número da partida após cada jogo
 

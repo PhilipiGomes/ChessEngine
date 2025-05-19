@@ -8,7 +8,7 @@ board = chess.Board()
 
 # Função para salvar o jogo
 def save_game(moves, white, black):
-    filename = f"Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+    filename = f"Engine/Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     if board.is_checkmate():
@@ -64,14 +64,12 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     while not board.is_game_over():
         if board.turn == chess.WHITE:
             best_move = get_best_move(board, depth_white, sequence, transposition_table_ai1)
-            print(board.san(best_move))
             if best_move == None:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
             board.push(best_move)
         else:
             best_move = get_best_move(board, depth_black, sequence, transposition_table_ai2)
-            print(board.san(best_move))
             if best_move == None:
                 board.push(random.choice(list(board.legal_moves)))
             sequence.append(board.san(best_move))
@@ -88,6 +86,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 
 # Iniciar o jogo AI vs AI
 start = time.time()
-ai_vs_ai(2, 2)
+ai_vs_ai(5, 5)
 elapsed = time.time() - start
 print(f'Time to finish this game: {elapsed:.3f} seconds')

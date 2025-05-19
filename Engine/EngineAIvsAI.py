@@ -184,7 +184,7 @@ def get_best_move(board, depth, sequence, transpositon_table):
                     openings_names.append(name)
                     break
                 else:
-                    opening_name = openings_names[-1]
+                    opening_name = openings_names[-1] if openings_names else "Unknown Opening"
             print(board.san(board.parse_san(san=move)), opening_name)
             return chess.Move.from_uci(board.parse_san(san=move).uci())
 
@@ -198,5 +198,5 @@ def get_best_move(board, depth, sequence, transpositon_table):
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
-    print(board.san(best_move), round(best_score, 5))
+    print(board.san(best_move), round(best_score, 5), "white" if board.turn else "black")
     return best_move
