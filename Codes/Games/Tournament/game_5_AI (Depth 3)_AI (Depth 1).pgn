@@ -1,0 +1,11 @@
+[Event "AI vs AI Game"]
+[Site "Local"]
+[Date "2025.05.19"]
+[Round "5"]
+[White "AI (Depth 3)"]
+[Black "AI (Depth 1)"]
+[WhiteElo "1514.66"]
+[BlackElo "1456.842"]
+[Result "1/2-1/2"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5 4. d4 e5 5. dxe5 Nc6 6. Nf3 Bb4 7. Bd2 Nf6 8. exf6 Bxc3 9. fxg7 Bxg7 10. Bxa5 O-O 11. Bxc7 Bf5 12. Bd3 Bxd3 13. Qxd3 Bxb2 14. Be5 Nxe5 15. Nxe5 Bxe5 16. O-O-O Rae8 17. a3 h6 18. h3 Bf6 19. Qg3+ Bg7 20. Qxg7+ Kxg7 21. Rhe1 Rxe1 22. Rxe1 Kf6 23. Kb1 a5 24. Re7 Kxe7 25. c4 Kd6 26. c5+ Kxc5 27. Ka1 Kd4 28. Kb1 b5 29. Ka1 f5 30. Kb1 a4 31. Ka1 f4 32. Kb1 f3 33. gxf3 h5 34. f4 h4 35. Ka1 b4 36. axb4 a3 37. f5 a2 38. Kxa2 Rxf5 39. Kb1 Rxf2 40. b5 Rd2 41. b6 Re2 42. b7 Rd2 43. b8=Q Re2 44. Qb4+ Kd5 45. Qxh4 Rd2 46. Qg5+ Kd4 47. Qxd2+ Ke4 48. Qd6 Ke3 49. Qe5+ Kd3 50. Qc3+ Kxc3 51. h4 Kd4 52. h5 Ke4 53. h6 Kd4 54. h7 Ke4 55. Ka1 Kd4 56. h8=N 1/2-1/2
