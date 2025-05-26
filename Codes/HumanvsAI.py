@@ -80,5 +80,4 @@ def ai_play(depth):
         print("Draw!")
     save_game(sequence, white, black)
 
-
 ai_play(4)

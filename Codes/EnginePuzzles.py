@@ -1,6 +1,7 @@
 import chess
 from chess.polyglot import zobrist_hash
 from Tables import piece_tables
+
 from typing import Dict, List, Optional
 
 transposition_table: Dict[int, float] = {}
@@ -92,12 +93,10 @@ def move_priority(board: chess.Board, move: chess.Move) -> float:
 # Quiescence search with more tactical depth
 def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
     stand_pat = evaluate_board(board)
-    
     if stand_pat >= beta:
         return beta
     if alpha < stand_pat:
         alpha = stand_pat
-
     # Only consider capture moves
     capture_moves = [m for m in board.legal_moves if board.is_capture(m)]
     moves = sorted(capture_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)

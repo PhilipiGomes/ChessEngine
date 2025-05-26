@@ -46,6 +46,7 @@ def drawPieces(screen, board):
 
 def save_game(board, moves, white, black):
     filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     if board.is_checkmate():
@@ -97,12 +98,10 @@ def ai_vs_ai(depth_ai1, depth_ai2):
         for event in p.event.get():
             if event.type == p.QUIT:
                 running = False
-
         if game_over:
             time.sleep(2)
             running = False
             continue
-
         if not game_over:
             if board.is_game_over():
                 game_over = True
@@ -137,6 +136,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 
 # Iniciar o jogo AI vs AI
 start = time.time()
-ai_vs_ai(3, 2)
+ai_vs_ai(2, 2)
 elapsed = time.time() - start
-print(f'Time to finish this game: {elapsed - 2:.3f} seconds')
+print(f'Time to finish this game: {elapsed:.3f} seconds')
