@@ -86,6 +86,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 
 # Iniciar o jogo AI vs AI
 start = time.time()
-ai_vs_ai(5, 5)
+ai_vs_ai(2, 2)
 elapsed = time.time() - start
 print(f'Time to finish this game: {elapsed:.3f} seconds')

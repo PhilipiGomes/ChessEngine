@@ -5,6 +5,8 @@ from Tables import piece_tables
 from Openings import openings
 from typing import Dict, List, Tuple, Optional, Any
 
+transposition_table: Dict[int, float] = {}
+
 # Select a random opening
 def select_random_opening(ope: Dict[str, List[str]]) -> Optional[Tuple[str, List[str]]]:
     if not ope:
@@ -17,7 +19,7 @@ def filter_openings(op: Dict[str, List[str]], sequence: List[str]) -> Dict[str, 
     if sequence:
         filtered_openings = {}
         for opening, moves in op.items():
-            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else True):
+            if moves[:len(sequence)] == sequence and (len(moves) > len(sequence) if len(sequence) > 0 else 1 == 1):
                 filtered_openings[opening] = moves
         return filtered_openings
     else:
@@ -31,7 +33,7 @@ def is_endgame(board: chess.Board) -> bool:
     return major_pieces <= 1 or (major_pieces == 2 and minor_pieces < 3)
 
 # Avaliação do valor de uma peça com base na posição no tabuleiro
-def piece_value(board: chess.Board, square: chess.Square) -> float:
+def piece_value(board: chess.Board, square: int) -> float:
     piece = board.piece_at(square)
     if not piece or piece.symbol().upper() == 'K':
         return 0
@@ -58,6 +60,7 @@ def get_flipped_table(piece: chess.Piece) -> List[float]:
     if flipped_table:
         flipped_table = flipped_table[::-1]  # Reverse the table
     return flipped_table
+
 
 # Função que avalia a posição das peças com base nas tabelas
 def evaluate_positional(board: chess.Board) -> float:
@@ -107,6 +110,7 @@ def move_priority(board: chess.Board, move: chess.Move) -> float:
     
     return guess
 
+
 # Quiescence search with more tactical depth
 def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
     stand_pat = evaluate_board(board)
@@ -115,6 +119,7 @@ def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
         return beta
     if alpha < stand_pat:
         alpha = stand_pat
+
     # Only consider capture moves
     capture_moves = [m for m in board.legal_moves if board.is_capture(m)]
     moves = sorted(capture_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
@@ -129,35 +134,24 @@ def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
     return alpha
 
 # Função principal de busca Minimax com poda alfa-beta
-def minimax_alpha_beta(
-    depth: int,
-    alpha: float,
-    beta: float,
-    is_maximizing: bool,
-    board: chess.Board,
-    transposition_table: Dict[int, float],
-    max_depth: int
-) -> float:
+def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: bool, board: chess.Board) -> float:
     board_hash = zobrist_hash(board)
-    transpos_table = transposition_table
 
     if board_hash in transposition_table:
         return transposition_table[board_hash]
 
     if depth == 0 or board.is_game_over():
         score = evaluate_board(board)
-        if board.is_game_over():
-            score += -(depth - max_depth)*10 if board.turn == chess.BLACK else (depth - max_depth)*10
         # score = quiescence(-999999, 999999, board)
         transposition_table[board_hash] = score
         return score
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     if is_maximizing:
         max_eval = -999999
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board, transpos_table, max_depth)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board)
             board.pop()
             max_eval = max(max_eval, eval)
             alpha = max(alpha, eval)
@@ -169,7 +163,7 @@ def minimax_alpha_beta(
         min_eval = 999999
         for move in moves:
             board.push(move)
-            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board, transpos_table, max_depth)
+            eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board)
             board.pop()
             min_eval = min(min_eval, eval)
             beta = min(beta, eval)
@@ -179,47 +173,28 @@ def minimax_alpha_beta(
         return min_eval
 
 
-openings_names: List[str] = []
-seq_with_move: List[str] = []
-
 # Get the best move for the AI
-def get_best_move(
-    board: chess.Board,
-    depth: int,
-    sequence: List[str],
-    transpositon_table: Dict[int, float]
-) -> Optional[chess.Move]:
+def get_best_move(board: chess.Board, depth: int, sequence: List[str]) -> Optional[chess.Move]:
     if sequence or board.fen() == chess.STARTING_FEN:
         filtered_openings = filter_openings(openings, sequence)
         if filtered_openings:
-            seq_with_move = sequence.copy()
             opening = random.choice(list(filtered_openings.items()))
-            if opening[0] == "Barnes Opening: Fool's Mate" or opening[0] == "Scotch Game: Sea-Cadet Mate":
+            if opening[0] == "Barnes Opening: Fool's Mate":
                 if random.randint(1,1000) == random.randint(1,1000):
                     pass
                 else:
                     opening = random.choice(list(filtered_openings.items()))
             move = opening[1][len(sequence)]
-            seq_with_move.append(move)
-            for name, moves in filtered_openings.items():
-                if seq_with_move == moves:
-                    opening_name = name
-                    openings_names.append(name)
-                    break
-                else:
-                    opening_name = openings_names[-1] if openings_names else "Unknown Opening"
-            print(board.san(board.parse_san(san=move)), opening_name)
             return chess.Move.from_uci(board.parse_san(san=move).uci())
 
-    best_move: Optional[chess.Move] = None
+    best_move = None
     best_score = -999999 if board.turn == chess.WHITE else 999999
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
+    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     for move in moves:
         board.push(move)
-        score = minimax_alpha_beta(depth - 1, -999999, 999999, board.turn == chess.WHITE, board, transpositon_table, depth)
+        score = minimax_alpha_beta(depth - 1, -999999, 999999, board.turn == chess.WHITE, board)
         board.pop()
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
-    print(board.san(best_move), round(best_score, 5), "white" if board.turn else "black")
     return best_move

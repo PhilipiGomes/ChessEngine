@@ -3,11 +3,19 @@ import random
 from chess.polyglot import zobrist_hash
 from Tables import piece_tables
 from Openings import openings
+from typing import Dict, List, Tuple, Optional, Any
 
-transposition_table = {}
+transposition_table: Dict[int, float] = {}
+
+# Select a random opening
+def select_random_opening(ope: Dict[str, List[str]]) -> Optional[Tuple[str, List[str]]]:
+    if not ope:
+        print("No openings available.")
+        return None
+    return random.choice(list(ope.items()))
 
 # Filter openings based on the current sequence of moves
-def filter_openings(op: dict, sequence: list) -> dict:
+def filter_openings(op: Dict[str, List[str]], sequence: List[str]) -> Dict[str, List[str]]:
     if sequence:
         filtered_openings = {}
         for opening, moves in op.items():
@@ -25,7 +33,7 @@ def is_endgame(board: chess.Board) -> bool:
     return major_pieces <= 1 or (major_pieces == 2 and minor_pieces < 3)
 
 # Avaliação do valor de uma peça com base na posição no tabuleiro
-def piece_value(board: chess.Board, square: chess.Square) -> float:
+def piece_value(board: chess.Board, square: int) -> float:
     piece = board.piece_at(square)
     if not piece or piece.symbol().upper() == 'K':
         return 0
@@ -45,7 +53,7 @@ def evaluate_board(board: chess.Board) -> float:
     return material_score + positional_score
 
 # Function to flip the piece tables (inverting the values for black)
-def get_flipped_table(piece: chess.Piece) -> list:
+def get_flipped_table(piece: chess.Piece) -> List[float]:
     table_key = piece.symbol().upper()
     # Flipping the table for black pieces
     flipped_table = piece_tables.get(table_key, [])
@@ -79,19 +87,28 @@ def evaluate_positional(board: chess.Board) -> float:
                 score -= table[table_index]
     return score
 
+def piece_value_by_type(piece: Optional[chess.Piece]) -> float:
+    if not piece or piece.symbol().upper() == 'K':
+        return 0
+    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+    return value if piece.color == chess.WHITE else -value
+
 # Refined move priority function
 def move_priority(board: chess.Board, move: chess.Move) -> float:
-    if board.gives_check(move):
-        return 4
-    elif board.is_capture(move):
-        attacker = board.piece_at(move.from_square)
-        victim = board.piece_at(move.to_square)
-        victim_value = piece_value(board, move.to_square) if victim else 0
-        attacker_value = piece_value(board, move.from_square) if attacker else 0
-        return 3 + (victim_value - attacker_value)
-    elif board.is_attacked_by(not board.turn, move.to_square):
-        return 2
-    return 1
+    guess = 0
+    promotion_values = {chess.KNIGHT: 2.8, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
+    attacker = board.piece_at(move.from_square)
+    victim = board.piece_at(move.to_square)
+
+    if board.is_capture(move):
+        guess = 10 * (piece_value_by_type(victim) - piece_value_by_type(attacker))
+    if bool(move.promotion):
+        promo_value = promotion_values.get(move.promotion, 0)
+        guess += promo_value if board.turn == chess.WHITE else -promo_value
+    if board.is_attacked_by(not board.turn, move.to_square):
+        guess -= piece_value_by_type(attacker)
+    
+    return guess
 
 # Quiescence search with more tactical depth
 def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
@@ -102,20 +119,21 @@ def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
     if alpha < stand_pat:
         alpha = stand_pat
 
-    moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
+    # Only consider capture moves
+    capture_moves = [m for m in board.legal_moves if board.is_capture(m)]
+    moves = sorted(capture_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     for move in moves:
-        if board.is_capture(move) or board.gives_check(move):
-            board.push(move)
-            score = -quiescence(-beta, -alpha, board)
-            board.pop()
-            if score >= beta:
-                return beta
-            if score > alpha:
-                alpha = score
+        board.push(move)
+        score = -quiescence(-beta, -alpha, board)
+        board.pop()
+        if score >= beta:
+            return beta
+        if score > alpha:
+            alpha = score
     return alpha
 
 # Função principal de busca Minimax com poda alfa-beta
-def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: bool, board: chess.Board, max_depth: int):
+def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: bool, board: chess.Board, max_depth: int) -> float:
     board_hash = zobrist_hash(board)
 
     if board_hash in transposition_table:
@@ -157,7 +175,7 @@ def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: boo
 
 
 # Get the best move for the AI
-def get_best_move(board: chess.Board, depth: int, sequence: list) -> chess.Move:
+def get_best_move(board: chess.Board, depth: int, sequence: List[str]) -> Optional[chess.Move]:
     if sequence or board.fen() == chess.STARTING_FEN:
         filtered_openings = filter_openings(openings, sequence)
         if filtered_openings:

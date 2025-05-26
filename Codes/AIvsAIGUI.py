@@ -18,7 +18,7 @@ def load_images():
     pieces = {'P': "wP", 'R': "wR", 'N': "wN", 'B': "wB", 'Q': "wQ", 'K': "wK",
               'p': "bP", 'r': "bR", 'n': "bN", 'b': "bB", 'q': "bQ", 'k': "bK"}
     for piece_key, piece in pieces.items():
-        path = os.path.join("Images", piece + ".png")
+        path = os.path.join("Codes", "Images", piece + ".png")
         if os.path.exists(path):
             IMAGES[piece_key] = p.transform.scale(p.image.load(path), (SQ_SIZE, SQ_SIZE))
         else:
@@ -45,7 +45,8 @@ def drawPieces(screen, board):
             screen.blit(IMAGES[piece.symbol()], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 def save_game(board, moves, white, black):
-    filename = f"Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     if board.is_checkmate():
@@ -97,7 +98,10 @@ def ai_vs_ai(depth_ai1, depth_ai2):
         for event in p.event.get():
             if event.type == p.QUIT:
                 running = False
-
+        if game_over:
+            time.sleep(2)
+            running = False
+            continue
         if not game_over:
             if board.is_game_over():
                 game_over = True
@@ -110,7 +114,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
 
             if best_move:
                 sequence.append(board.san(best_move))
-                print(board.san(best_move))
                 board.push(best_move)
             else:
                 fallback_move = random.choice(list(board.legal_moves))
