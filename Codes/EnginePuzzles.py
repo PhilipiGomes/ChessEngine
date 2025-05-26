@@ -120,13 +120,13 @@ def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: boo
 
     if depth == 0 or board.is_game_over():
         score = evaluate_board(board)
-        # score = quiescence(-float('inf'), float('inf'), board)
+        # score = quiescence(-999999, 999999, board)
         transposition_table[board_hash] = score
         return score
 
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     if is_maximizing:
-        max_eval = -float('inf')
+        max_eval = -999999
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(depth - 1, alpha, beta, False, board)
@@ -138,7 +138,7 @@ def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: boo
         transposition_table[board_hash] = max_eval
         return max_eval
     else:
-        min_eval = float('inf')
+        min_eval = 999999
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(depth - 1, alpha, beta, True, board)
@@ -153,11 +153,11 @@ def minimax_alpha_beta(depth: int, alpha: float, beta: float, is_maximizing: boo
 # Função para obter o melhor movimento
 def get_best_move(board: chess.Board, depth: int) -> Optional[chess.Move]:
     best_move = None
-    best_score = -float('inf') if board.turn == chess.WHITE else float('inf')
+    best_score = -999999 if board.turn == chess.WHITE else 999999
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     for move in moves:
         board.push(move)
-        score = minimax_alpha_beta(depth - 1, -float('inf'), float('inf'), board.turn == chess.WHITE, board)
+        score = minimax_alpha_beta(depth - 1, -999999, 999999, board.turn == chess.WHITE, board)
         board.pop()
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
