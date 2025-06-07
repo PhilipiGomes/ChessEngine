@@ -140,5 +140,6 @@ cython_debug/
 # Custom
 Codes/Games/
 Codes/teste.py
+Codes/teste2.py
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python

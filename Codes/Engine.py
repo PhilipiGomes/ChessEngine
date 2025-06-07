@@ -37,7 +37,7 @@ def piece_value(board: chess.Board, square: int) -> float:
     piece = board.piece_at(square)
     if not piece or piece.symbol().upper() == 'K':
         return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+    value = {'P': 1, 'N': 3, 'B': 3.2, 'R': 5, 'Q': 9}[piece.symbol().upper()]
     return value if piece.color == chess.WHITE else -value
 
 # Evaluate the board with improved evaluation logic
@@ -52,17 +52,12 @@ def evaluate_board(board: chess.Board) -> float:
     positional_score = evaluate_positional(board)
     return material_score + positional_score
 
-# Function to flip the piece tables (inverting the values for black)
-def get_flipped_table(piece: chess.Piece) -> List[float]:
-    table_key = piece.symbol().upper()
-    # Flipping the table for black pieces
-    flipped_table = piece_tables.get(table_key, [])
-    if flipped_table:
-        flipped_table = flipped_table[::-1]  # Reverse the table
-    return flipped_table
+# Function to get the correct index for piece-square tables based on color
+def get_table_index(square: int, color: bool) -> int:
+    # For white, flip the square vertically to match the table orientation
+    return square if color == chess.WHITE else chess.square_mirror(square)
 
-
-# Função que avalia a posição das peças com base nas tabelas
+# Function that evaluates the position of pieces based on piece-square tables
 def evaluate_positional(board: chess.Board) -> float:
     score = 0
     for square in chess.SQUARES:
@@ -76,37 +71,34 @@ def evaluate_positional(board: chess.Board) -> float:
         else:
             table = piece_tables.get(piece.symbol().upper())
 
-        if piece.color == chess.WHITE:
-            table = get_flipped_table(piece)
-
         if table:
-            table_index = square
+            table_index = get_table_index(square, piece.color)
             if piece.color == chess.WHITE:
                 score += table[table_index]
             else:
                 score -= table[table_index]
     return score
 
-def piece_value_by_type(piece: Optional[chess.Piece]) -> float:
-    if not piece or piece.symbol().upper() == 'K':
-        return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
-    return value if piece.color == chess.WHITE else -value
-
 # Refined move priority function
 def move_priority(board: chess.Board, move: chess.Move) -> float:
+    def piece_value_type(piece):
+        if not piece or piece.symbol().upper() == 'K':
+            return 0
+        value = {'P': 1, 'N': 3, 'B': 3.2, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+        return value if piece.color == chess.WHITE else -value
+
     guess = 0
-    promotion_values = {chess.KNIGHT: 2.8, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
+    values = {chess.PAWN: 1, chess.KNIGHT: 2.8, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
     attacker = board.piece_at(move.from_square)
     victim = board.piece_at(move.to_square)
 
     if board.is_capture(move):
-        guess = 10 * (piece_value_by_type(victim) - piece_value_by_type(attacker))
+        guess = 10 * (piece_value_type(victim) - piece_value_type(attacker))
     if bool(move.promotion):
-        promo_value = promotion_values.get(move.promotion, 0)
+        promo_value = values[move.promotion]
         guess += promo_value if board.turn == chess.WHITE else -promo_value
     if board.is_attacked_by(not board.turn, move.to_square):
-        guess -= piece_value_by_type(attacker)
+        guess -= piece_value_type(attacker) if board.turn == chess.WHITE else -piece_value_type(attacker)
     
     return guess
 

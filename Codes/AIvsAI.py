@@ -8,7 +8,7 @@ board = chess.Board()
 
 # Função para salvar o jogo
 def save_game(moves, white, black):
-    filename = f"Engine/Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
+    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_{white}_{black}.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
     if board.is_checkmate():

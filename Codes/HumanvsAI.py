@@ -1,4 +1,4 @@
-import Engine
+from ChessEngine import ChessEngine as ce
 import chess
 import random
 import time
@@ -52,12 +52,15 @@ def ai_play(depth):
     white = random.choice([f"AI (Depth {depth})", "Human"])
     black = f"AI (Depth {depth})" if white == "Human" else "Human"
 
+    ai_color = chess.WHITE if white.startswith("AI") else chess.BLACK
+    engine = ce(board, depth, ai_color)
+
     print()
 
     while not board.is_game_over():
         if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (board.turn == chess.BLACK and black == f"AI (Depth {depth})"):
             print(f"AI's turn.")
-            best_move = Engine.get_best_move(board, depth, sequence)
+            best_move = engine.get_best_move(sequence)
             print(f"AI move: {board.san(best_move)}")
             sequence.append(board.san(best_move))
             board.push(best_move)

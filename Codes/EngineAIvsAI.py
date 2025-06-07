@@ -35,29 +35,96 @@ def piece_value(board: chess.Board, square: chess.Square) -> float:
     piece = board.piece_at(square)
     if not piece or piece.symbol().upper() == 'K':
         return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+    value = {'P': 1, 'N': 3, 'B': 3.2, 'R': 5, 'Q': 9}[piece.symbol().upper()]
     return value if piece.color == chess.WHITE else -value
 
-# Evaluate the board with improved evaluation logic
+def endgame_eval(friendly_king_square: int, enemy_king_square: int, endgame_weight: float, is_white: bool) -> float:
+    # Encourage the friendly king to approach the enemy king and push the enemy king to the edge
+    eval_score = 0
+
+    # Distance of enemy king from center (encourage pushing to edge)
+    enemy_file = chess.square_file(enemy_king_square)
+    enemy_rank = chess.square_rank(enemy_king_square)
+    center_files = [3, 4]
+    center_ranks = [3, 4]
+    dist_from_center = min(abs(enemy_file - c) for c in center_files) + min(abs(enemy_rank - c) for c in center_ranks)
+    eval_score += dist_from_center
+
+    # Distance between kings (encourage friendly king to approach)
+    king_distance = chess.square_manhattan_distance(friendly_king_square, enemy_king_square)
+    eval_score += (14 - king_distance) * 5  # 14 is max manhattan distance on 8x8
+
+    # For black, invert the sign so that positive is good for white, negative for black
+    return eval_score * endgame_weight if is_white else -eval_score * endgame_weight
+
 def evaluate_board(board: chess.Board) -> float:
+    # Piece values
+    values = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3.2, chess.ROOK: 5, chess.QUEEN: 9}
+    evaluation = 0.0
+
+    # Game over checks
     if board.is_game_over():
         if board.is_checkmate():
-            return 999999 if board.turn == chess.BLACK else -999999
-        elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
-            return 0
+            return -999999 if board.turn else 999999
+        else:
+            return 0.0
 
-    material_score = sum(piece_value(board, square) for square in chess.SQUARES)
+    # Material and positional evaluation
+    white_material = 0.0
+    black_material = 0.0
+    for square in chess.SQUARES:
+        piece = board.piece_at(square)
+        if not piece or piece.piece_type == chess.KING:
+            continue
+        value = values.get(piece.piece_type, 0)
+        if piece.color == chess.WHITE:
+            white_material += value
+        else:
+            black_material += value
+
+    # Remove pawns for endgame weighting
+    white_no_pawns = white_material - sum(
+        values[chess.PAWN] for sq in chess.SQUARES
+        if (p := board.piece_at(sq)) and p.color == chess.WHITE and p.piece_type == chess.PAWN
+    )
+    black_no_pawns = black_material - sum(
+        values[chess.PAWN] for sq in chess.SQUARES
+        if (p := board.piece_at(sq)) and p.color == chess.BLACK and p.piece_type == chess.PAWN
+    )
+
+    # Endgame weight calculation
+    endgame_material_start = values[chess.ROOK] * 2 + values[chess.BISHOP] + values[chess.KNIGHT]
+    def endgame_weight(material_no_pawns: float) -> float:
+        return 1 - min(1, material_no_pawns / endgame_material_start) if endgame_material_start > 0 else 1
+
+    endgame_weight_white = endgame_weight(white_no_pawns)
+    endgame_weight_black = endgame_weight(black_no_pawns)
+
+    # Material and positional score
+    material_score = white_material - black_material
     positional_score = evaluate_positional(board)
-    return material_score + positional_score
+    evaluation += material_score + positional_score
 
-# Function to flip the piece tables (inverting the values for black)
-def get_flipped_table(piece: chess.Piece) -> List[float]:
-    table_key = piece.symbol().upper()
-    # Flipping the table for black pieces
-    flipped_table = piece_tables.get(table_key, [])
-    if flipped_table:
-        flipped_table = flipped_table[::-1]  # Reverse the table
-    return flipped_table
+    # Endgame evaluation if appropriate
+    if is_endgame(board):
+        wk = board.king(chess.WHITE)
+        bk = board.king(chess.BLACK)
+        if wk is not None and bk is not None:
+            evaluation += endgame_eval(
+                wk, bk,
+                endgame_weight_white, True
+            )
+            evaluation += endgame_eval(
+                bk, wk,
+                endgame_weight_black, False
+            )
+
+    return evaluation
+
+# Function to get the correct index for piece-square tables based on color
+def get_table_index(square: int, color: bool) -> int:
+    # For white, flip the square vertically to match the table orientation
+    return square if color == chess.WHITE else chess.square_mirror(square)
 
 # Função que avalia a posição das peças com base nas tabelas
 def evaluate_positional(board: chess.Board) -> float:
@@ -73,37 +140,36 @@ def evaluate_positional(board: chess.Board) -> float:
         else:
             table = piece_tables.get(piece.symbol().upper())
 
-        if piece.color == chess.WHITE:
-            table = get_flipped_table(piece)
-
         if table:
-            table_index = square
+            table_index = get_table_index(square, piece.color)
             if piece.color == chess.WHITE:
                 score += table[table_index]
             else:
                 score -= table[table_index]
     return score
 
-def piece_value_by_type(piece: Optional[chess.Piece]) -> float:
-    if not piece or piece.symbol().upper() == 'K':
+def piece_value_type(piece: Optional[chess.Piece]) -> float:
+    if not piece or piece == chess.KING:
         return 0
-    value = {'P': 1, 'N': 2.8, 'B': 3, 'R': 5, 'Q': 9}[piece.symbol().upper()]
+    value = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3.2, chess.ROOK: 5, chess.QUEEN: 9}
     return value if piece.color == chess.WHITE else -value
 
 # Refined move priority function
 def move_priority(board: chess.Board, move: chess.Move) -> float:
     guess = 0
-    promotion_values = {chess.KNIGHT: 2.8, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
+    values = {chess.PAWN: 1, chess.KNIGHT: 2.8, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
     attacker = board.piece_at(move.from_square)
     victim = board.piece_at(move.to_square)
 
     if board.is_capture(move):
-        guess = 10 * (piece_value_by_type(victim) - piece_value_by_type(attacker))
+        guess = 0.1 * (piece_value_type(victim) - piece_value_type(attacker))
     if bool(move.promotion):
-        promo_value = promotion_values.get(move.promotion, 0)
+        promo_value = values.get(move.promotion, 0)
         guess += promo_value if board.turn == chess.WHITE else -promo_value
     if board.is_attacked_by(not board.turn, move.to_square):
-        guess -= piece_value_by_type(attacker)
+        guess -= piece_value_type(attacker)
+    if board.gives_check(move):
+        guess += 10
     
     return guess
 
@@ -115,8 +181,8 @@ def quiescence(alpha: float, beta: float, board: chess.Board) -> float:
         return beta
     if alpha < stand_pat:
         alpha = stand_pat
-    # Only consider capture moves
-    capture_moves = [m for m in board.legal_moves if board.is_capture(m)]
+    # Only consider capture moves and checks
+    capture_moves = [m for m in board.legal_moves if board.is_capture(m) or board.gives_check(m)]
     moves = sorted(capture_moves, key=lambda m: move_priority(board, m), reverse=board.turn != chess.BLACK)
     for move in moves:
         board.push(move)
@@ -145,10 +211,10 @@ def minimax_alpha_beta(
         return transposition_table[board_hash]
 
     if depth == 0 or board.is_game_over():
-        score = evaluate_board(board)
+        # score = evaluate_board(board)
+        score = quiescence(-999999, 999999, board)
         if board.is_game_over():
             score += -(depth - max_depth)*10 if board.turn == chess.BLACK else (depth - max_depth)*10
-        # score = quiescence(-999999, 999999, board)
         transposition_table[board_hash] = score
         return score
 
@@ -194,26 +260,28 @@ def get_best_move(
         if filtered_openings:
             seq_with_move = sequence.copy()
             opening = random.choice(list(filtered_openings.items()))
-            if opening[0] == "Barnes Opening: Fool's Mate" or opening[0] == "Scotch Game: Sea-Cadet Mate":
-                if random.randint(1,1000) == random.randint(1,1000):
-                    pass
-                else:
-                    opening = random.choice(list(filtered_openings.items()))
-            move = opening[1][len(sequence)]
-            seq_with_move.append(move)
-            for name, moves in filtered_openings.items():
-                if seq_with_move == moves:
-                    opening_name = name
-                    openings_names.append(name)
-                    break
-                else:
-                    opening_name = openings_names[-1] if openings_names else "Unknown Opening"
-            print(board.san(board.parse_san(san=move)), opening_name)
-            return chess.Move.from_uci(board.parse_san(san=move).uci())
+            try:
+                move = opening[1][len(sequence)]
+            except IndexError:
+                print("Opening move index out of range.")
+                move = None
+            if move:
+                seq_with_move.append(move)
+                for name, moves in filtered_openings.items():
+                    if seq_with_move == moves:
+                        opening_name = name
+                        openings_names.append(name)
+                        break
+                    else:
+                        opening_name = openings_names[-1] if openings_names else "Unknown Opening"
+                print(board.san(board.parse_san(san=move)), opening_name)
+                return chess.Move.from_uci(board.parse_san(san=move).uci())
+            else:
+                print("No move found in opening book.")
 
-    best_move: Optional[chess.Move] = None
-    best_score = -999999 if board.turn == chess.WHITE else 999999
     moves = sorted(board.legal_moves, key=lambda m: move_priority(board, m), reverse=board.turn == chess.BLACK)
+    best_move: Optional[chess.Move] = moves[0]
+    best_score = -999999 if board.turn == chess.WHITE else 999999
     for move in moves:
         board.push(move)
         score = minimax_alpha_beta(depth - 1, -999999, 999999, board.turn == chess.WHITE, board, transpositon_table, depth)
@@ -221,5 +289,6 @@ def get_best_move(
         if score >= best_score if board.turn == chess.WHITE else score <= best_score:
             best_score = score
             best_move = move
-    print(board.san(best_move), round(best_score, 5), "white" if board.turn else "black")
+    if len(moves) == 1:
+        best_move = moves[0]
     return best_move
