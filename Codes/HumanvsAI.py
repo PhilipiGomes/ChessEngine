@@ -1,11 +1,12 @@
-from ChessEngine import ChessEngine as ce
-import chess
+import os
 import random
 import time
-import os
 
+import chess
+from ChessEngine import ChessEngine as ce
 
 board = chess.Board()
+
 
 def save_game(moves, white, black):
     if board.is_checkmate():
@@ -17,19 +18,19 @@ def save_game(moves, white, black):
         result = "1/2-1/2"
 
     pgn_header = (
-        f"[Event \"AI vs Human Game\"]\n"
-        f"[Site \"Local\"]\n"
+        f'[Event "AI vs Human Game"]\n'
+        f'[Site "Local"]\n'
         f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
-        f"[Round \"1\"]\n"
-        f"[White \"{white}\"]\n"
-        f"[Black \"{black}\"]\n"
-        f"[WhiteElo \"1500\"]\n"
-        f"[BlackElo \"1500\"]\n"
-        f"[Result \"{result}\"]\n\n"
+        f'[Round "1"]\n'
+        f'[White "{white}"]\n'
+        f'[Black "{black}"]\n'
+        f'[WhiteElo "1500"]\n'
+        f'[BlackElo "1500"]\n'
+        f'[Result "{result}"]\n\n'
     )
     filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, 'w') as file:
+    with open(filename, "w") as file:
         file.write(pgn_header)
 
         move_text = ""
@@ -45,10 +46,11 @@ def save_game(moves, white, black):
 
     print(f"Game saved to {filename}")
 
+
 # Function to test AI vs Human
 def ai_play(depth):
     sequence = []
-
+    # trunk-ignore(bandit/B311)
     white = random.choice([f"AI (Depth {depth})", "Human"])
     black = f"AI (Depth {depth})" if white == "Human" else "Human"
 
@@ -58,11 +60,17 @@ def ai_play(depth):
     print()
 
     while not board.is_game_over():
-        if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (board.turn == chess.BLACK and black == f"AI (Depth {depth})"):
-            print(f"AI's turn.")
+        if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (
+            board.turn == chess.BLACK and black == f"AI (Depth {depth})"
+        ):
+            print("AI's turn.")
             best_move = engine.get_best_move(sequence)
-            print(f"AI move: {board.san(best_move)}")
-            sequence.append(board.san(best_move))
+            if best_move is None:
+                print("AI has no legal moves. Game over.")
+                break
+            move_san = board.san(best_move)
+            print(f"AI move: {move_san}")
+            sequence.append(move_san)
             board.push(best_move)
 
         else:
@@ -79,8 +87,14 @@ def ai_play(depth):
 
     if board.is_checkmate():
         print("Checkmate!")
-    elif board.is_stalemate() or board.is_fivefold_repetition() or board.is_insufficient_material() or board.is_seventyfive_moves():
+    elif (
+        board.is_stalemate()
+        or board.is_fivefold_repetition()
+        or board.is_insufficient_material()
+        or board.is_seventyfive_moves()
+    ):
         print("Draw!")
     save_game(sequence, white, black)
+
 
 ai_play(4)

@@ -1,3 +1,4 @@
+# trunk-ignore-all(black)
 piece_tables = {
 
     'P': [
