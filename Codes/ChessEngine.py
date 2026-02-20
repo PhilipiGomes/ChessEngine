@@ -90,16 +90,16 @@ class ChessEngine:
     
     def evaluate_positional(self) -> float:
         score = 0.0
+        table = None
         for square in chess.SQUARES:
             piece = self.board.piece_at(square)
-            if not piece:
-                continue
-            if self.is_endgame() and piece.piece_type == chess.KING:
-                table = piece_tables["K_end"]
-            elif self.is_endgame() and piece.piece_type == chess.PAWN:
-                table = piece_tables["P_end"]
-            else:
-                table = piece_tables.get(piece.symbol().upper())
+            if piece:
+                if self.is_endgame() and piece.piece_type == chess.KING:
+                    table = piece_tables["K_end"]
+                elif self.is_endgame() and piece.piece_type == chess.PAWN:
+                    table = piece_tables["P_end"]
+                else:
+                    table = piece_tables.get(piece.piece_type)
 
             if table:
                 idx = square if piece.color == chess.WHITE else chess.square_mirror(square)
