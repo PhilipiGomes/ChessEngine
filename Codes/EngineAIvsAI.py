@@ -6,6 +6,8 @@ from chess.polyglot import zobrist_hash
 from Openings import openings
 from Tables import piece_tables
 
+MATE_SCORE = 100000
+
 
 # Select a random opening
 def select_random_opening(ope: Dict[str, List[str]]) -> Optional[Tuple[str, List[str]]]:
@@ -96,7 +98,7 @@ def evaluate_board(board: chess.Board) -> float:
     # Game over checks
     if board.is_game_over():
         if board.is_checkmate():
-            return -999999 if board.turn else 999999
+            return -MATE_SCORE if board.turn else MATE_SCORE
         else:
             return 0.0
 
@@ -279,7 +281,7 @@ def minimax_alpha_beta(
 
     if depth == 0 or board.is_game_over():
         # score = evaluate_board(board)
-        score = quiescence(-999999, 999999, board)
+        score = quiescence(-MATE_SCORE, MATE_SCORE, board)
         if board.is_game_over():
             score += (
                 -(depth - max_depth) * 10
@@ -295,7 +297,7 @@ def minimax_alpha_beta(
         reverse=board.turn == chess.BLACK,
     )
     if is_maximizing:
-        max_eval = -999999
+        max_eval = -MATE_SCORE
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(
@@ -309,7 +311,7 @@ def minimax_alpha_beta(
         transposition_table[board_hash] = max_eval
         return max_eval
     else:
-        min_eval = 999999
+        min_eval = MATE_SCORE
         for move in moves:
             board.push(move)
             eval = minimax_alpha_beta(
@@ -369,13 +371,13 @@ def get_best_move(
         reverse=board.turn == chess.BLACK,
     )
     best_move: Optional[chess.Move] = moves[0]
-    best_score = -999999 if board.turn == chess.WHITE else 999999
+    best_score = -MATE_SCORE if board.turn == chess.WHITE else MATE_SCORE
     for move in moves:
         board.push(move)
         score = minimax_alpha_beta(
             depth - 1,
-            -999999,
-            999999,
+            -MATE_SCORE,
+            MATE_SCORE,
             board.turn == chess.WHITE,
             board,
             transpositon_table,
@@ -387,4 +389,4 @@ def get_best_move(
             best_move = move
     if len(moves) == 1:
         best_move = moves[0]
-    return best_move
+    return best_move, best_score

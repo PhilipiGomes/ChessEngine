@@ -5,27 +5,29 @@ import os
 import chess
 import matplotlib.pyplot as plt  # Importando matplotlib para gráficos
 import pandas as pd
-from EnginePuzzles import get_best_move
+from ChessEngine import ChessEngine as ce
 
 
 # Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(csv_filename):
+def load_puzzles_from_csv(csv_filename: str) -> pd.DataFrame:
     df = pd.read_csv(csv_filename)
     return df
 
 
 # Função para filtrar puzzles por tema
-def filter_puzzles_by_theme(df, theme):
+def filter_puzzles_by_theme(df: pd.DataFrame, theme: str) -> pd.DataFrame:
     return df[df["Themes"].str.contains(theme, case=False, na=False)]
 
 
 # Função para filtrar puzzles por rating
-def filter_puzzles_by_rating(df, min_rating, max_rating):
+def filter_puzzles_by_rating(
+    df: pd.DataFrame, min_rating: float, max_rating: float
+) -> pd.DataFrame:
     return df[(df["Rating"] >= min_rating) & (df["Rating"] <= max_rating)]
 
 
 # Função para pegar um puzzle aleatório e os movimentos corretos
-def get_random_fen_and_moves(df):
+def get_random_fen_and_moves(df: pd.DataFrame) -> tuple:
     random_row = df.sample(n=1)
     return (
         random_row["PuzzleId"].values[0],
@@ -38,7 +40,7 @@ def get_random_fen_and_moves(df):
 
 
 # Função para calcular a nova classificação (rating) usando o sistema Elo
-def update_rating(current_rating, puzzle_rating, correct):
+def update_rating(current_rating: float, puzzle_rating: float, correct: bool) -> float:
     k = 32
     s = 400 / math.log(10)
     prob = 1 / (1 + (math.e) ** ((current_rating - puzzle_rating) / s))
@@ -51,15 +53,17 @@ def update_rating(current_rating, puzzle_rating, correct):
 
 
 # Função principal para resolver os puzzles
-def puzzle(board, depth, num_puzzles, theme=None, rang=500):
+def puzzle(
+    board: chess.Board, depth: int, num_puzzles: int, theme: str = None, rang: int = 500
+):
     # Carregar os puzzles do arquivo CSV
-    csv_filename = (
-        "lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
-    )
+    csv_filename = ".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
+    print("Loading puzzles...")
     df_puzzles = load_puzzles_from_csv(csv_filename)
 
     # Filtrar puzzles pelo tema, se fornecido
     if theme:
+        print(f"Filtering puzzles by theme: {theme}")
         df_puzzles = filter_puzzles_by_theme(df_puzzles, theme)
 
     # Inicializar o rating do bot
@@ -72,7 +76,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
 
     # Arquivo para salvar os dados dos puzzles
     # Garantir que a pasta de resultados exista
-    output_dir = "PuzzlesResults"
+    output_dir = ".\Codes\PuzzlesResults"
     os.makedirs(output_dir, exist_ok=True)
 
     # Construir a parte do tema de forma segura (evita f-string aninhada que causa erro em < Python 3.12)
@@ -102,6 +106,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
             min_rating = rating - rang
             max_rating = rating + rang
 
+            print(f"Filtering puzzles by rating: {min_rating} - {max_rating}")
             df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
 
             if len(df_puzzles) == 0:
@@ -132,7 +137,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
             bot_moves = []
             correct_moves = []
             puzzle_solved = True
-
+            engine = ce(board, depth, not board.turn)
             for i, move in enumerate(move_list):
                 if i % 2 == 0:
                     try:
@@ -147,7 +152,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
                         break
                 else:  # Movimentos de índice ímpar (do bot)
                     # Movimentos do bot
-                    bot_move = get_best_move(board, depth)
+                    bot_move, bot_score = engine.get_best_move([])
                     expected_move_san = board.san(board.parse_uci(move))
 
                     if bot_move is None:
@@ -161,7 +166,7 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
                     expected_move_san = board.san(board.parse_uci(move))
 
                     print(
-                        f"Bot move: {bot_move_san}, expected move: {expected_move_san}"
+                        f"Bot move: {bot_move_san} Bot evaluation: {bot_score}, expected move: {expected_move_san}"
                     )
 
                     if bot_move_san != expected_move_san:
@@ -215,4 +220,4 @@ def puzzle(board, depth, num_puzzles, theme=None, rang=500):
 board = chess.Board()
 
 # Testando a função com tema e faixa de rating
-puzzle(board, 4, num_puzzles=200, theme=None, rang=500)
+puzzle(board, 1, num_puzzles=500, theme="mateIn1", rang=500)

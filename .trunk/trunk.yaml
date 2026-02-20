@@ -1,3 +1,4 @@
+# trunk-ignore-all(prettier)
 # This file controls the behavior of Trunk: https://docs.trunk.io/cli
 # To learn more about the format of this file, see https://docs.trunk.io/reference/trunk-yaml
 version: 0.1
@@ -16,10 +17,11 @@ runtimes:
     - python@3.10.8
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
-  enabled:
-    - bandit@1.8.6
-    - black@25.11.0
+  disabled:
+    - bandit
     - git-diff-check
+  enabled:
+    - black@25.11.0
     - isort@7.0.0
     - markdownlint@0.45.0
     - osv-scanner@2.2.4

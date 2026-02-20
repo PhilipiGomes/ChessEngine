@@ -1,3 +1,4 @@
+# trunk-ignore-all(black)
 openings = {
     "Amar Opening": ['Nh3'],
     "Amar Opening: Paris Gambit": ['Nh3', 'd5', 'g3', 'e5', 'f4'],
@@ -6,7 +7,7 @@ openings = {
     "Anderssen's Opening": ['a3'],
     "Anderssen's Opening: Polish Gambit": ['a3', 'a5', 'b4'],
     "Barnes Opening": ['f3'],
-    "Barnes Opening: Fool's Mate": ['f3', 'e5', 'g4', 'Qh4#'],
+    
     "Barnes Opening: Gedult Gambit": ['f3', 'd5', 'e4', 'g6', 'd4', 'dxe4', 'c3'],
     "Barnes Opening: Gedult Gambit2": ['f3', 'f5', 'e4', 'fxe4', 'Nc3'],
     "Barnes Opening: Hammerschlag": ['f3', 'e5', 'Kf2'],
@@ -2188,7 +2189,7 @@ openings = {
     "Scotch Game: Scotch Gambit, Kingside Variation": ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'd4', 'exd4', 'e5', 'Ng4'],
     "Scotch Game: Scotch Gambit, London Defense": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Bc4', 'Bb4+'],
     "Scotch Game: Scotch Gambit, Sarratt Variation": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Bc4', 'Bc5', 'Ng5'],
-    "Scotch Game: Sea-Cadet Mate": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'c3', 'dxc3', 'Nxc3', 'd6', 'Bc4', 'Bg4', 'O-O', 'Ne5', 'Nxe5', 'Bxd1', 'Bxf7+', 'Ke7', 'Nd5#'],
+    
     "Scotch Game: Vitzthum Attack": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Bc4', 'Bc5', 'Ng5', 'Nh6', 'Qh5'],
     "Scotch Game3": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4'],
     "Scotch Game4": ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Qh4', 'Nb5', 'Bb4+', 'Bd2'],

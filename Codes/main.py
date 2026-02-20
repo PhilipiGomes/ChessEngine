@@ -1,53 +1,39 @@
 import chess
-from Engine import (  # Certifique-se de que esta função está definida em Engine.py
-    get_best_move,
-)
+from ChessEngine import ChessEngine
+import random
 
 
 def main():
-    board = chess.Board()
+    board = chess.Board(fen='8/3r4/3k4/8/8/8/3K4/8 w - - 0 1')
     sequence = []
-
+    engine_color = random.choice([chess.BLACK])
+    engine = ChessEngine(board, 2, engine_color)
+    my_color_str = "White" if engine_color == chess.BLACK else "Black"
+    engine_color_str = "White" if engine_color == chess.WHITE else "Black"
+    print(f"Me: {my_color_str}, Engine: {engine_color_str}")
     while True:
-        try:
-            line = input()
-        except EOFError:
+        print(board)
+        print()
+        if board.turn == engine_color:
+            best_move = engine.get_best_move(sequence)
+            sequence.append(board.san(best_move))
+            print(f"Engine move: {board.san(best_move)}")
+            board.push(best_move)
+        else:
+            while True:
+                my_move = input("Your Move (SAN format): ")
+                try:
+                    my_move_uci = board.parse_san(my_move)
+                    break
+                except ValueError:
+                    print("Invalid SAN move, try again: ")
+                
+            sequence.append(my_move)
+            board.push(my_move_uci)
+        print()
+        if board.is_game_over():
             break
-
-        if line == "uci":
-            print("id name PhiliEngine")
-            print("id author Philipi")
-            print("uciok")
-        elif line == "isready":
-            print("readyok")
-        elif line.startswith("position"):
-            tokens = line.split()
-            print(tokens)
-            if "startpos" in tokens:
-                board.reset()
-                moves_index = tokens.index("startpos") + 1
-            elif "fen" in tokens:
-                fen_index = tokens.index("fen") + 1
-                fen = " ".join(tokens[fen_index : fen_index + 6])
-                board.set_fen(fen)
-                moves_index = fen_index + 6
-            else:
-                continue
-            if "moves" in tokens:
-                moves_index = tokens.index("moves") + 1
-                for move in tokens[moves_index:]:
-                    board.push_uci(move)
-        elif line == "ucinewgame":
-            board.reset()
-            sequence = []
-        elif line.startswith("go"):
-            move = get_best_move(board, depth=3, sequence=sequence)
-            if move:
-                print(f"bestmove {move.uci()}")
-            else:
-                print("bestmove 0000")
-        elif line == "quit":
-            break
+    print(f"Game Over! Result: {board.result()}")
 
 
 if __name__ == "__main__":

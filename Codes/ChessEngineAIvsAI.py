@@ -6,6 +6,8 @@ from chess.polyglot import zobrist_hash
 from Openings import openings
 from Tables import manhattan_distance_king, piece_tables
 
+MATE_SCORE = 100000.0
+
 
 class ChessEngine:
     def __init__(
@@ -84,6 +86,7 @@ class ChessEngine:
         return score
 
     def Mop_up_eval(self) -> float:
+        mop_up_score = 0
         enemy_square = self.board.king(not self.color)
         friend_square = self.board.king(self.color)
 
@@ -91,32 +94,22 @@ class ChessEngine:
             return 0.0
 
         cmd_enemy = manhattan_distance_king[enemy_square]
+        mop_up_score -= cmd_enemy * 10
 
         md_kings = chess.square_manhattan_distance(friend_square, enemy_square)
+        mop_up_score += md_kings * 4
 
         perspective = 1 if self.board.turn == chess.WHITE else -1
-
-        return (4.7 * cmd_enemy + 1.6 * (14 - md_kings)) * perspective
+        return mop_up_score * perspective
 
     def evaluate_board(self) -> float:
-        if self.board.is_game_over():
-            if self.board.is_checkmate():
-                return 999999.0 if self.board.turn == chess.BLACK else -999999.0
-            if (
-                self.board.is_stalemate()
-                or self.board.is_fivefold_repetition()
-                or self.board.is_insufficient_material()
-                or self.board.is_seventyfive_moves()
-            ):
-                return 0.0
-
         material = sum(
             self.piece_value_type(p) for p in self.board.piece_map().values()
         )
         positional = self.evaluate_positional()
 
         if self.is_endgame():
-            return self.Mop_up_eval() + material + positional
+            return self.Mop_up_eval() + material
 
         return material + positional
 
@@ -124,17 +117,16 @@ class ChessEngine:
         guess = 0.0
         values = {
             chess.PAWN: 1,
-            chess.KNIGHT: 2.8,
-            chess.BISHOP: 3,
+            chess.KNIGHT: 3,
+            chess.BISHOP: 3.2,
             chess.ROOK: 5,
             chess.QUEEN: 9,
-            chess.KING: 0,
         }
         attacker = self.board.piece_at(move.from_square)
         victim = self.board.piece_at(move.to_square)
 
         if self.board.is_capture(move):
-            guess = 10 * (
+            guess = 15 * (
                 self.piece_value_type(victim) - self.piece_value_type(attacker)
             )
         if move.promotion:
@@ -143,9 +135,11 @@ class ChessEngine:
         if self.board.is_attacked_by(not self.board.turn, move.to_square):
             guess -= (
                 self.piece_value_type(attacker)
-                if self.board.turn == chess.WHITE
+                if attacker.color == chess.WHITE
                 else -self.piece_value_type(attacker)
             )
+        if self.board.gives_check(move):
+            guess += 20 if self.board.turn == chess.BLACK else -20
 
         return guess
 
@@ -178,17 +172,28 @@ class ChessEngine:
         alpha: float,
         beta: float,
         is_maximizing: bool,
-        max_depth: int,
     ) -> float:
+        ai_depth = self.depth
+        if self.board.is_game_over():
+            if self.board.is_checkmate():
+                return (
+                    MATE_SCORE - (ai_depth - depth)
+                    if self.board.turn == chess.BLACK
+                    else (ai_depth - depth) - MATE_SCORE
+                )
+            else:
+                return (
+                    (ai_depth - depth)
+                    if self.board.turn == chess.WHITE
+                    else -(ai_depth - depth)
+                )
+
         board_hash = zobrist_hash(self.board)
         if board_hash in self.transposition_table:
             return self.transposition_table[board_hash]
 
         if depth == 0 or self.board.is_game_over():
             score = self.evaluate_board()
-            if self.board.is_game_over():
-                adjustment = (depth - max_depth) * 10
-                score += -adjustment if self.board.turn == chess.BLACK else adjustment
             self.transposition_table[board_hash] = score
             return score
 
@@ -198,12 +203,10 @@ class ChessEngine:
             reverse=self.board.turn != chess.BLACK,
         )
         if is_maximizing:
-            max_eval = -999999.0
+            max_eval = -MATE_SCORE
             for move in moves:
                 self.board.push(move)
-                eval_score = self.minimax_alpha_beta(
-                    depth - 1, alpha, beta, False, max_depth
-                )
+                eval_score = self.minimax_alpha_beta(depth - 1, alpha, beta, False)
                 self.board.pop()
                 max_eval = max(max_eval, eval_score)
                 alpha = max(alpha, eval_score)
@@ -212,12 +215,10 @@ class ChessEngine:
             self.transposition_table[board_hash] = max_eval
             return max_eval
         else:
-            min_eval = 999999.0
+            min_eval = MATE_SCORE
             for move in moves:
                 self.board.push(move)
-                eval_score = self.minimax_alpha_beta(
-                    depth - 1, alpha, beta, True, max_depth
-                )
+                eval_score = self.minimax_alpha_beta(depth - 1, alpha, beta, True)
                 self.board.pop()
                 min_eval = min(min_eval, eval_score)
                 beta = min(beta, eval_score)
@@ -241,12 +242,15 @@ class ChessEngine:
                         # trunk-ignore(bandit/B311)
                         opening = random.choice(list(filtered.items()))
                 san_move = opening[1][len(sequence)]
-                return chess.Move.from_uci(self.board.parse_san(san=san_move).uci())
+                return (
+                    chess.Move.from_uci(self.board.parse_san(san=san_move).uci()),
+                    "Book",
+                )
 
         # Busca minimax
         best_move: Optional[chess.Move] = None
         # Se engine joga White, queremos maximizar; se joga Black, queremos minimizar
-        best_score = -999999.0 if self.color == chess.WHITE else 999999.0
+        best_score = -MATE_SCORE if self.color == chess.WHITE else MATE_SCORE
 
         moves = sorted(
             self.board.legal_moves,
@@ -257,7 +261,7 @@ class ChessEngine:
             self.board.push(move)
             # is_maximizing começa True porque é a vez da engine ao aplicar este método
             score = self.minimax_alpha_beta(
-                self.depth - 1, -999999.0, 999999.0, False, self.depth
+                self.depth - 1, -MATE_SCORE, MATE_SCORE, False
             )
             self.board.pop()
             if self.color == chess.WHITE:
@@ -268,4 +272,4 @@ class ChessEngine:
                 if score <= best_score:
                     best_score = score
                     best_move = move
-        return best_move
+        return best_move, best_score

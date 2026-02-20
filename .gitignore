@@ -141,5 +141,8 @@ cython_debug/
 Codes/Games/
 Codes/teste.py
 Codes/teste2.py
+Codes/backup.txt
+Codes/Data/
+Codes/PuzzlesResults/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python

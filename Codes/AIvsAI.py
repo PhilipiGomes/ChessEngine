@@ -3,7 +3,7 @@ import random
 import time
 
 import chess
-from EngineAIvsAI import get_best_move
+from ChessEngine import ChessEngine
 
 board = chess.Board()
 
@@ -57,41 +57,30 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     os.system("cls")
     sequence = []
 
-    # Inicializar tabelas de transposição separadas para as duas IAs
-    transposition_table_ai1 = {}
-    transposition_table_ai2 = {}
-
     # trunk-ignore(bandit/B311)
     depth_white = random.choice([depth_ai1, depth_ai2])
     depth_black = depth_ai2 if depth_white == depth_ai1 else depth_ai1
+
+    engine1 = ChessEngine(board, depth_white, chess.WHITE)
+    engine2 = ChessEngine(board, depth_black, chess.BLACK)
 
     print(f"White: AI (Depth {depth_white}), Black: AI (Depth {depth_black})")
 
     while not board.is_game_over():
         if board.turn == chess.WHITE:
-            best_move = get_best_move(
-                board, depth_white, sequence, transposition_table_ai1
-            )
+            best_move, best_score = engine1.get_best_move(sequence)
             if not best_move:
                 # trunk-ignore(bandit/B311)
                 best_move = random.choice(list(board.legal_moves))
-                sequence.append(board.san(best_move))
-                board.push(best_move)
-                continue
-            sequence.append(board.san(best_move))
-            board.push(best_move)
         else:
-            best_move = get_best_move(
-                board, depth_black, sequence, transposition_table_ai2
-            )
+            best_move, best_score = engine2.get_best_move(sequence)
             if not best_move:
                 # trunk-ignore(bandit/B311)
                 best_move = random.choice(list(board.legal_moves))
-                sequence.append(board.san(best_move))
-                board.push(best_move)
-                continue
-            sequence.append(board.san(best_move))
-            board.push(best_move)
+        san_move = board.san(best_move)
+        print(san_move, best_score)
+        sequence.append(san_move)
+        board.push(best_move)
 
     print(f"White: AI (Depth {depth_white}), Black: AI (Depth {depth_black})")
 
@@ -108,8 +97,10 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     save_game(sequence, f"AI (Depth {depth_white})", f"AI (Depth {depth_black})")
 
 
+board = chess.Board(fen="3r4/8/3k4/8/8/8/3K4/8 w - - 0 1")
+
 # Iniciar o jogo AI vs AI
 start = time.time()
-ai_vs_ai(2, 2)
+ai_vs_ai(4, 4)
 elapsed = time.time() - start
 print(f"Time to finish this game: {elapsed:.3f} seconds")
