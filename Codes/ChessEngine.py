@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 import chess
 from chess.polyglot import zobrist_hash
 from Openings import openings
-from Tables import manhattan_center_distance_king
+from Tables import manhattan_center_distance_king, piece_tables
 
 MATE_SCORE = 100000.0
 
@@ -88,9 +88,23 @@ class ChessEngine:
             return True
         return False
     
-    def evaluate_positional(self):
-        # TODO: Montar a função de avaliação posicional
-        return 0
+    def evaluate_positional(self) -> float:
+        score = 0.0
+        for square in chess.SQUARES:
+            piece = self.board.piece_at(square)
+            if not piece:
+                continue
+            if self.is_endgame() and piece.piece_type == chess.KING:
+                table = piece_tables["K_end"]
+            elif self.is_endgame() and piece.piece_type == chess.PAWN:
+                table = piece_tables["P_end"]
+            else:
+                table = piece_tables.get(piece.symbol().upper())
+
+            if table:
+                idx = square if piece.color == chess.WHITE else chess.square_mirror(square)
+                score += table[idx] if piece.color == chess.WHITE else -table[idx]
+        return score
     
     def evaluate_board(self) -> float:
         eval = 0
@@ -99,7 +113,7 @@ class ChessEngine:
         positional = self.evaluate_positional()
         eval += positional
         if self.is_endgame():
-            return self.mopup_eval() + positional
+            return self.mopup_eval() + eval
         return eval
 
     def move_score(self, move: chess.Move) -> float:
