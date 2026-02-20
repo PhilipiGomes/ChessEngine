@@ -101,9 +101,9 @@ class ChessEngine:
                 else:
                     table = piece_tables.get(piece.piece_type)
 
-            if table:
-                idx = square if piece.color == chess.WHITE else chess.square_mirror(square)
-                score += table[idx] if piece.color == chess.WHITE else -table[idx]
+                if table:
+                    idx = square if piece.color == chess.WHITE else chess.square_mirror(square)
+                    score += table[idx] if piece.color == chess.WHITE else -table[idx]
         return score
     
     def evaluate_board(self) -> float:
