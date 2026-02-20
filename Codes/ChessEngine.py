@@ -88,12 +88,18 @@ class ChessEngine:
             return True
         return False
     
+    def evaluate_positional(self):
+        # TODO: Montar a função de avaliação posicional
+        return 0
+    
     def evaluate_board(self) -> float:
         eval = 0
         material = sum(self.piece_value(p) for p in self.board.piece_map().values())
         eval += material
+        positional = self.evaluate_positional()
+        eval += positional
         if self.is_endgame():
-            return self.mopup_eval()
+            return self.mopup_eval() + positional
         return eval
 
     def move_score(self, move: chess.Move) -> float:
