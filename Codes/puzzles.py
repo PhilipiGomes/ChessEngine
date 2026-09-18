@@ -1,6 +1,8 @@
 import csv
 import math
 import os
+import subprocess
+from typing import Optional
 
 import chess
 import matplotlib.pyplot as plt  # Importando matplotlib para gráficos
@@ -9,8 +11,12 @@ from ChessEngine import ChessEngine as ce
 
 
 # Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(csv_filename: str) -> pd.DataFrame:
+def load_puzzles_from_csv(
+    csv_filename: str, theme: Optional[str] = None
+) -> pd.DataFrame:
     df = pd.read_csv(csv_filename)
+    if theme:
+        df = filter_puzzles_by_theme(df, theme)
     return df
 
 
@@ -54,17 +60,16 @@ def update_rating(current_rating: float, puzzle_rating: float, correct: bool) ->
 
 # Função principal para resolver os puzzles
 def puzzle(
-    board: chess.Board, depth: int, num_puzzles: int, theme: str = None, rang: int = 500
+    board: chess.Board,
+    depth: int,
+    num_puzzles: int,
+    theme: Optional[str] = None,
+    rang: Optional[int] = None,
 ):
     # Carregar os puzzles do arquivo CSV
     csv_filename = ".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
     print("Loading puzzles...")
-    df_puzzles = load_puzzles_from_csv(csv_filename)
-
-    # Filtrar puzzles pelo tema, se fornecido
-    if theme:
-        print(f"Filtering puzzles by theme: {theme}")
-        df_puzzles = filter_puzzles_by_theme(df_puzzles, theme)
+    df_puzzles = load_puzzles_from_csv(csv_filename, theme)
 
     # Inicializar o rating do bot
     rating = 1500
@@ -124,9 +129,7 @@ def puzzle(
                 print(f"Posição FEN inválida para o puzzle {puzzle_id}.")
                 continue
 
-            # trunk-ignore(bandit/B607)
-            # trunk-ignore(bandit/B605)
-            os.system("cls")
+            subprocess.run("cls", shell=True)
 
             print(f"Number of puzzles filtered: {len(df_puzzles)}")
             print(f"Puzzle {puzzle_index + 1}: {puzzle_id}")
@@ -152,7 +155,7 @@ def puzzle(
                         break
                 else:  # Movimentos de índice ímpar (do bot)
                     # Movimentos do bot
-                    bot_move, bot_score = engine.get_best_move([])
+                    bot_move = engine.get_best_move([])
                     expected_move_san = board.san(board.parse_uci(move))
 
                     if bot_move is None:
@@ -166,7 +169,7 @@ def puzzle(
                     expected_move_san = board.san(board.parse_uci(move))
 
                     print(
-                        f"Bot move: {bot_move_san} Bot evaluation: {bot_score}, expected move: {expected_move_san}"
+                        f"Bot move: {bot_move_san}, expected move: {expected_move_san}"
                     )
 
                     if bot_move_san != expected_move_san:
@@ -203,9 +206,6 @@ def puzzle(
         writer.writerow([])
         writer.writerow([f"Final Rating: {round(rating, 3)}"])
 
-    # trunk-ignore(bandit/B605)
-    # trunk-ignore(bandit/B607)
-    os.system("cls")
     print(f"Rating final do bot: {rating:.2f}")
 
     # Gerar o gráfico com a variação do rating
@@ -219,5 +219,4 @@ def puzzle(
 
 board = chess.Board()
 
-# Testando a função com tema e faixa de rating
-puzzle(board, 1, num_puzzles=500, theme="mateIn1", rang=500)
+puzzle(board, 4, num_puzzles=1000, rang=600)

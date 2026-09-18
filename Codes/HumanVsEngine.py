@@ -50,7 +50,6 @@ def save_game(moves, white, black):
 # Function to test AI vs Human
 def ai_play(depth):
     sequence = []
-    # trunk-ignore(bandit/B311)
     white = random.choice([f"AI (Depth {depth})", "Human"])
     black = f"AI (Depth {depth})" if white == "Human" else "Human"
 

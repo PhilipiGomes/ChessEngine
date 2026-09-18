@@ -1,13 +1,14 @@
+import random
+
 import chess
 from ChessEngine import ChessEngine
-import random
 
 
 def main():
-    board = chess.Board(fen='8/3r4/3k4/8/8/8/3K4/8 w - - 0 1')
+    board = chess.Board()
     sequence = []
-    engine_color = random.choice([chess.BLACK])
-    engine = ChessEngine(board, 2, engine_color)
+    engine_color = random.choice([chess.WHITE, chess.BLACK])
+    engine = ChessEngine(board, 4, engine_color)
     my_color_str = "White" if engine_color == chess.BLACK else "Black"
     engine_color_str = "White" if engine_color == chess.WHITE else "Black"
     print(f"Me: {my_color_str}, Engine: {engine_color_str}")
@@ -27,7 +28,7 @@ def main():
                     break
                 except ValueError:
                     print("Invalid SAN move, try again: ")
-                
+
             sequence.append(my_move)
             board.push(my_move_uci)
         print()

@@ -1,6 +1,6 @@
 import csv
-import math
 import os
+from typing import Optional
 
 import chess
 import pandas as pd
@@ -8,8 +8,12 @@ from ChessEngine import ChessEngine as ce
 
 
 # Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(csv_filename: str) -> pd.DataFrame:
+def load_puzzles_from_csv(
+    csv_filename: str, theme: Optional[str] = None
+) -> pd.DataFrame:
     df = pd.read_csv(csv_filename)
+    if theme:
+        df = filter_puzzles_by_theme(df, theme)
     return df
 
 
@@ -38,27 +42,14 @@ def get_random_fen_and_moves(df: pd.DataFrame) -> tuple:
     )
 
 
-def update_rating(current_rating: float, puzzle_rating: float, correct: bool) -> float:
-    k = 32
-    s = 400 / math.log(10, math.e)
-    prob = 1 / (1 + (math.e) ** ((current_rating - puzzle_rating) / s))
-    if correct:
-        return current_rating + k * prob
-    else:
-        return current_rating - k * (1 - prob)
-
-
 # Função principal para resolver os puzzles
-def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
+def puzzle(
+    board: chess.Board, depth: int, theme: str = None, rang: Optional[int] = None
+):
     # Carregar os puzzles do arquivo CSV
     csv_filename = ".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
     print("Loading puzzles...")
-    df_puzzles = load_puzzles_from_csv(csv_filename)
-
-    # Filtrar puzzles pelo tema, se fornecido
-    if theme:
-        print(f"Filtering puzzles by theme: {theme}")
-        df_puzzles = filter_puzzles_by_theme(df_puzzles, theme)
+    df_puzzles = load_puzzles_from_csv(csv_filename, theme)
 
     # Inicializar o rating do bot
     rating = 1500
@@ -92,15 +83,11 @@ def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
         df_puzzles = filter_puzzles_by_rating(df_puzzles, min_rating, max_rating)
 
         # Obter um puzzle aleatório
-        puzzle_id, fen, moves, themes, game_url, puzzle_rating = (
-            get_random_fen_and_moves(df_puzzles)
+        puzzle_id, fen, moves, themes, game_url, _ = get_random_fen_and_moves(
+            df_puzzles
         )
         move_list = moves.split()
         board.set_fen(fen)
-
-        # Limpar a tela no Windows ou sistemas Unix
-        # trunk-ignore(bandit/B605)
-        os.system("cls" if os.name == "nt" else "clear")
 
         print(f"Puzzle ID: {puzzle_id}")
         print(f"Puzzle FEN: {fen}")
@@ -126,7 +113,7 @@ def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
                     puzzle_solved = False
                     break
             else:  # Movimentos de índice ímpar (do bot)
-                bot_move, bot_score = engine.get_best_move([])
+                bot_move = engine.get_best_move([])
                 bot_move_san = board.san(bot_move)
                 bot_moves.append(bot_move_san)
 
@@ -135,9 +122,7 @@ def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
                     board.parse_uci(move)
                 )  # Esse é o movimento correto
 
-                print(
-                    f"Bot move: {bot_move_san} Bot evaluation: {bot_score}, expected move: {expected_move_san}"
-                )
+                print(f"Bot move: {bot_move_san}, expected move: {expected_move_san}")
 
                 if bot_move_san != expected_move_san:
                     print("Bot falhou!")
@@ -150,9 +135,6 @@ def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
 
                 # Adicionar movimento correto do bot até este ponto
                 correct_moves.append(expected_move_san)
-
-        # Atualizar o rating usando o rating do puzzle
-        rating = update_rating(rating, puzzle_rating, puzzle_solved)
 
         # Gravar os resultados no arquivo CSV
         writer.writerow(
@@ -169,11 +151,9 @@ def puzzle(board: chess.Board, depth: int, theme: str = None, rang: int = 500):
             ]
         )
 
-    print(f"Rating final do bot: {rating:.2f}")
-
 
 # Configuração do tabuleiro e execução dos puzzles
 board = chess.Board()
 
 # Iniciar resolução de puzzles com tema e range de rating escolhidos
-puzzle(board, 2, theme="mateIn1", rang=150)
+puzzle(board, 4, rang=150)

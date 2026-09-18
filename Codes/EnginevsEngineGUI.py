@@ -118,7 +118,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
     transposition_table_ai1 = {}
     transposition_table_ai2 = {}
 
-    # trunk-ignore(bandit/B311)
     depth_white = random.choice([depth_ai1, depth_ai2])
     depth_black = depth_ai2 if depth_white == depth_ai1 else depth_ai1
 
@@ -153,7 +152,6 @@ def ai_vs_ai(depth_ai1, depth_ai2):
                 sequence.append(board.san(best_move))
                 board.push(best_move)
             else:
-                # trunk-ignore(bandit/B311)
                 fallback_move = random.choice(list(board.legal_moves))
                 sequence.append(board.san(fallback_move))
                 board.push(fallback_move)
