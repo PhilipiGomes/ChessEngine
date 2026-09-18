@@ -4,7 +4,7 @@ import time
 
 import chess
 import pygame as p
-from Engine import get_best_move
+from Engine import Engine
 
 p.init()
 WIDTH = HEIGHT = 512
@@ -48,7 +48,7 @@ def save_game(moves, white, black, board):
         result = "1/2-1/2"
 
     pgn_header = (
-        f'[Event "AI vs Human Game"]\n'
+        f'[Event "Engine vs Human Game"]\n'
         f'[Site "Local"]\n'
         f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
         f'[Round "1"]\n'
@@ -58,7 +58,7 @@ def save_game(moves, white, black, board):
         f'[BlackElo "1500"]\n'
         f'[Result "{result}"]\n\n'
     )
-    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
+    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsEngine.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as file:
         file.write(pgn_header)
@@ -77,24 +77,25 @@ def save_game(moves, white, black, board):
     print(f"Game saved to {filename}")
 
 
-def main(ai_depth, sequence):
+def main(engine_depth, sequence):
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     board = chess.Board()
     load_images()
+    engine = Engine(board, engine_depth, None, "Engine")
     running = True
 
-    # trunk-ignore(bandit/B311)
     player_is_white = random.choice([True, False])
+    engine.color = chess.BLACK if player_is_white else chess.WHITE
     player_turn = player_is_white  # Jogador começa se for branco
     selected_square = None
 
     moves_san = []  # Lista para armazenar os lances em SAN
 
     # Nomes dos jogadores
-    white_name = "Human" if player_is_white else "AI"
-    black_name = "AI" if player_is_white else "Human"
+    white_name = "Human" if player_is_white else engine.name
+    black_name = engine.name if player_is_white else "Human"
 
     while running:
         for event in p.event.get():
@@ -112,12 +113,9 @@ def main(ai_depth, sequence):
 
         if not player_turn and not board.is_game_over():
             prev_board = board.copy()
-            ai_move = get_best_move(board, ai_depth, sequence)
-            if not ai_move:
-                # trunk-ignore(bandit/B311)
-                ai_move = random.choice(list(board.legal_moves))
-            board.push(ai_move)
-            moves_san.append(prev_board.san(ai_move))
+            engine_move = engine.get_best_move(sequence)
+            board.push(engine_move)
+            moves_san.append(prev_board.san(engine_move))
             player_turn = True  # Volta para o jogador
 
         drawGameState(screen, board, player_is_white)

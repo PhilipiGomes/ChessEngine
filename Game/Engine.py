@@ -32,7 +32,7 @@ class TTEntry(NamedTuple):
     bound: Bound
 
 
-class ChessEngine:
+class Engine:
     def __init__(
         self,
         board: chess.Board,
