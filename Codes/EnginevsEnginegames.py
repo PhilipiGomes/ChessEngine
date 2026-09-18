@@ -18,13 +18,6 @@ def save_game(moves, white, black, n_game, board):
             result = "1-0"
         else:
             result = "0-1"
-    elif (
-        board.is_stalemate()
-        or board.is_insufficient_material()
-        or board.is_seventyfive_moves()
-        or board.is_variant_draw()
-    ):
-        result = "1/2-1/2"
     else:
         result = "1/2-1/2"
 
@@ -77,35 +70,8 @@ def engine_vs_engine(
         elif engine2.color == board.turn:
             best_move = engine2.get_best_move(sequence)
         san_move = board.san(best_move)
-        if board.turn == chess.WHITE:
-            tamanho_str = len(san_move)
-            if board.fullmove_number >= 10:
-                if tamanho_str < 4:
-                    if tamanho_str == 2:
-                        fim = "  "
-                    else:
-                        fim = " "
-                else:
-                    fim = ""
-            else:
-                if tamanho_str < 5:
-                    if tamanho_str == 2:
-                        fim = "   "
-                    elif tamanho_str == 3:
-                        fim = "  "
-                    else:
-                        fim = " "
-                else:
-                    fim = ""
-            print(f"{board.fullmove_number}. {san_move}", end=fim)
-            print("\t", end="")
-        else:
-            print(f"{san_move}")
         sequence.append(san_move)
         board.push(best_move)
-    if board.turn != chess.WHITE:
-        print()
-    print()
 
     save_game(
         sequence,

@@ -18,7 +18,7 @@ def save_game(moves, white, black):
         result = "1/2-1/2"
 
     pgn_header = (
-        f'[Event "AI vs Human Game"]\n'
+        f'[Event "Engine vs Human Game"]\n'
         f'[Site "Local"]\n'
         f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
         f'[Round "1"]\n'
@@ -28,7 +28,7 @@ def save_game(moves, white, black):
         f'[BlackElo "1500"]\n'
         f'[Result "{result}"]\n\n'
     )
-    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsAI.pgn"
+    filename = f"Codes/Games/game_{time.strftime('%Y_%m_%d')}_HumanvsEngine.pgn"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as file:
         file.write(pgn_header)
@@ -47,31 +47,30 @@ def save_game(moves, white, black):
     print(f"Game saved to {filename}")
 
 
-# Function to test AI vs Human
-def ai_play(depth):
+# Function to test Engine vs Human
+def engine_play(depth):
     sequence = []
-    white = random.choice([f"AI (Depth {depth})", "Human"])
-    black = f"AI (Depth {depth})" if white == "Human" else "Human"
+    
+    engine = ce(board, depth, None, "Engine")
+    
+    white = random.choice([engine.name, "Human"])
+    black = engine.name if white == "Human" else "Human"
 
-    ai_color = chess.WHITE if white.startswith("AI") else chess.BLACK
-    engine = ce(board, depth, ai_color)
-
+    engine.color = chess.WHITE if white == engine.name else chess.BLACK
+    
     print()
 
     while not board.is_game_over():
-        if (board.turn == chess.WHITE and white == f"AI (Depth {depth})") or (
-            board.turn == chess.BLACK and black == f"AI (Depth {depth})"
-        ):
-            print("AI's turn.")
+        if engine.color == board.turn:
+            print("Engine's turn.")
             best_move = engine.get_best_move(sequence)
             if best_move is None:
-                print("AI has no legal moves. Game over.")
+                print("Engine has no legal moves. Game over.")
                 break
             move_san = board.san(best_move)
-            print(f"AI move: {move_san}")
+            print(f"Engine move: {move_san}")
             sequence.append(move_san)
             board.push(best_move)
-
         else:
             move_san = input("Enter your move (in SAN format, e.g., e4): ")
             try:
@@ -86,14 +85,9 @@ def ai_play(depth):
 
     if board.is_checkmate():
         print("Checkmate!")
-    elif (
-        board.is_stalemate()
-        or board.is_fivefold_repetition()
-        or board.is_insufficient_material()
-        or board.is_seventyfive_moves()
-    ):
+    else:
         print("Draw!")
     save_game(sequence, white, black)
 
 
-ai_play(4)
+engine_play(4)
