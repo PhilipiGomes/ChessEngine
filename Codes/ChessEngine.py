@@ -161,7 +161,7 @@ class ChessEngine:
         if piece_to_capture is not None:
             # MVV-LVA: capturar uma peca valiosa com uma peca barata pontua mais.
             victim_value = PIECE_VALUES.get(piece_to_capture.piece_type, 0)
-            score += 5 * (victim_value - mover_value)
+            score += 20 * (victim_value - mover_value)
 
         if move.promotion is not None:
             score += PIECE_VALUES[move.promotion]
@@ -174,7 +174,7 @@ class ChessEngine:
             score -= mover_value
 
         if self.board.gives_check(move):
-            score += 50
+            score += 20
 
         return score
 

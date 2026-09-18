@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import subprocess
 
 import chess
 from ChessEngine import ChessEngine
@@ -60,6 +61,8 @@ def engine_vs_engine(depth1, depth2):
     engine1.color = random.choice([chess.WHITE, chess.BLACK])
     engine2.color = chess.WHITE if engine1.color == chess.BLACK else chess.BLACK
 
+    subprocess.run("cls", shell=True)
+    
     print(
         f"White: {engine1.name} (Depth {engine1.depth}), Black: {engine2.name} (Depth {engine2.depth})",
         end="\n\n",
@@ -112,6 +115,6 @@ board = chess.Board()
 
 # Iniciar o jogo Engine vs Engine
 start = time.time()
-engine_vs_engine(1, 2)
+engine_vs_engine(4, 4)
 elapsed = time.time() - start
 print(f"Time to finish this game: {elapsed:.3f} seconds")
