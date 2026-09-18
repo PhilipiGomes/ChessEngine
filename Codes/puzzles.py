@@ -87,7 +87,7 @@ def puzzle(
     # Construir a parte do tema de forma segura (evita f-string aninhada que causa erro em < Python 3.12)
     theme_part = "" if theme is None else f"_{theme}_"
     filename = os.path.join(
-        output_dir, f"puzzle_results_{depth}{theme_part}{rang}_{num_puzzles}.csv"
+        output_dir, f"puzzle_results_{depth}_{theme_part}_{rang}_{num_puzzles}.csv"
     )
 
     with open(filename, mode="w", newline="") as file:
@@ -219,4 +219,4 @@ def puzzle(
 
 board = chess.Board()
 
-puzzle(board, 4, num_puzzles=1000, rang=600)
+puzzle(board, 4, num_puzzles=10, rang=600)

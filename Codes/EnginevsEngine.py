@@ -1,7 +1,6 @@
 import os
 import random
 import time
-from typing import Tuple
 
 import chess
 from ChessEngine import ChessEngine
@@ -52,10 +51,11 @@ def save_game(moves, white, black):
 
 
 # Função para testar o jogo entre duas IAs
-def engine_vs_engine(
-    engine1: ChessEngine, engine2: ChessEngine
-) -> Tuple[str, ChessEngine, ChessEngine]:
+def engine_vs_engine(depth1, depth2):
     sequence = []
+    
+    engine1 = ChessEngine(board, depth1, None, "Engine 1")
+    engine2 = ChessEngine(board, depth2, None, "Engine 2")
 
     engine1.color = random.choice([chess.WHITE, chess.BLACK])
     engine2.color = chess.WHITE if engine1.color == chess.BLACK else chess.BLACK
@@ -112,6 +112,6 @@ board = chess.Board()
 
 # Iniciar o jogo Engine vs Engine
 start = time.time()
-engine_vs_engine(1, 3)
+engine_vs_engine(1, 2)
 elapsed = time.time() - start
 print(f"Time to finish this game: {elapsed:.3f} seconds")
