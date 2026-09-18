@@ -102,7 +102,7 @@ def engine_vs_engine(depth1, depth2):
         board.push(best_move)
     if board.turn != chess.WHITE:
         print()
-    print()
+    print(board.result())
 
     save_game(
         sequence,
