@@ -1,7 +1,7 @@
 import os
 import random
-import time
 import subprocess
+import time
 
 import chess
 from ChessEngine import ChessEngine
@@ -25,7 +25,7 @@ def save_game(moves, white, black):
     pgn_header = (
         f'[Event "Engine vs Engine Game"]\n'
         f'[Site "Local"]\n'
-        f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
+        f'[Date "{time.strftime("%Y.%m.%d")}"]\n'
         f'[Round "1"]\n'
         f'[White "{white}"]\n'
         f'[Black "{black}"]\n'
@@ -54,21 +54,22 @@ def save_game(moves, white, black):
 # Função para testar o jogo entre duas IAs
 def engine_vs_engine(depth1, depth2):
     sequence = []
-    
+
     engine1 = ChessEngine(board, depth1, None, "Engine 1")
     engine2 = ChessEngine(board, depth2, None, "Engine 2")
 
     engine1.color = random.choice([chess.WHITE, chess.BLACK])
     engine2.color = chess.WHITE if engine1.color == chess.BLACK else chess.BLACK
 
-    subprocess.run("cls", shell=True)
-    
+    subprocess.run("cls", shell=True, check=False)
+
     print(
         f"White: {engine1.name} (Depth {engine1.depth}), Black: {engine2.name} (Depth {engine2.depth})",
         end="\n\n",
     )
-
+    
     while not board.is_game_over():
+        best_move = random.choice(list(board.legal_moves))
         if engine1.color == board.turn:
             best_move = engine1.get_best_move(sequence)
         elif engine2.color == board.turn:
@@ -115,6 +116,6 @@ board = chess.Board()
 
 # Iniciar o jogo Engine vs Engine
 start = time.time()
-engine_vs_engine(4, 4)
+engine_vs_engine(2, 2)
 elapsed = time.time() - start
 print(f"Time to finish this game: {elapsed:.3f} seconds")

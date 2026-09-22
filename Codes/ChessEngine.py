@@ -1,6 +1,6 @@
 import random
 from enum import IntEnum
-from typing import Dict, List, NamedTuple, Optional, Tuple
+from typing import NamedTuple
 
 import chess
 from chess.polyglot import zobrist_hash
@@ -37,25 +37,25 @@ class ChessEngine:
         self,
         board: chess.Board,
         depth: int,
-        color: chess.Color,
-        name: Optional[str] = None,
+        color: chess.Color | None,
+        name: str | None = None,
     ):
         self.board = board
         self.depth = depth
         self.color = color
-        self.tt: Dict[int, TTEntry] = {}
+        self.tt: dict[int, TTEntry] = {}
         self.name = name
 
     def select_random_opening(
-        self, ope: Dict[str, List[str]]
-    ) -> Optional[Tuple[str, List[str]]]:
+        self, ope: dict[str, list[str]]
+    ) -> tuple[str, list[str]] | None:
         if not ope:
             return None
         return random.choice(list(ope.items()))
 
     def filter_openings(
-        self, op: Dict[str, List[str]], sequence: List[str]
-    ) -> Dict[str, List[str]]:
+        self, op: dict[str, list[str]], sequence: list[str]
+    ) -> dict[str, list[str]]:
         if not sequence:
             return op
         return {
@@ -64,7 +64,7 @@ class ChessEngine:
             if moves[: len(sequence)] == sequence and len(moves) > len(sequence)
         }
 
-    def piece_value(self, piece: Optional[chess.Piece]) -> float:
+    def piece_value(self, piece: chess.Piece | None) -> float:
         if not piece or piece.piece_type == chess.KING:
             return 0.0
         v = PIECE_VALUES[piece.piece_type]
@@ -86,6 +86,8 @@ class ChessEngine:
 
         white_king = self.board.king(chess.WHITE)
         black_king = self.board.king(chess.BLACK)
+        if white_king is None or black_king is None:
+            return 0.0
         king_distance = chess.square_manhattan_distance(white_king, black_king)
 
         if material > 0:
@@ -108,9 +110,7 @@ class ChessEngine:
 
         if queens == 0 and minor_pieces < 3:
             return True
-        if queens == 1 and minor_pieces < 2:
-            return True
-        return False
+        return queens == 1 and minor_pieces < 2
 
     def evaluate_positional(self, endgame: bool) -> float:
         score = 0.0
@@ -161,7 +161,7 @@ class ChessEngine:
         if piece_to_capture is not None:
             # MVV-LVA: capturar uma peca valiosa com uma peca barata pontua mais.
             victim_value = PIECE_VALUES.get(piece_to_capture.piece_type, 0)
-            score += 20 * (victim_value - mover_value)
+            score += 10 * (victim_value - mover_value)
 
         if move.promotion is not None:
             score += PIECE_VALUES[move.promotion]
@@ -171,14 +171,14 @@ class ChessEngine:
         # do proprio engine (self.color), que pode nem ser quem esta a jogar
         # neste no da recursao.
         if self.board.attackers_mask(not self.board.turn, move.to_square):
-            score -= mover_value
+            score -= mover_value * 5
 
         if self.board.gives_check(move):
-            score += 20
+            score += 10
 
         return score
 
-    def move_ordering(self, moves: List[chess.Move]) -> List[chess.Move]:
+    def move_ordering(self, moves: list[chess.Move]) -> list[chess.Move]:
         return sorted(moves, key=self.move_score, reverse=True)
 
     def quiescence(self, alpha: float, beta: float) -> float:
@@ -195,10 +195,8 @@ class ChessEngine:
             self.board.push(capture)
             score = -self.quiescence(-beta, -alpha)
             self.board.pop()
-            if score > best:
-                best = score
-            if best > alpha:
-                alpha = best
+            best = max(best, score)
+            alpha = max(alpha, best)
             if alpha >= beta:
                 break
         return best
@@ -236,10 +234,8 @@ class ChessEngine:
             self.board.push(move)
             score = -self.minimax(depth - 1, -beta, -alpha)
             self.board.pop()
-            if score > best_score:
-                best_score = score
-            if best_score > alpha:
-                alpha = best_score
+            best_score = max(best_score, score)
+            alpha = max(alpha, best_score)
             if alpha >= beta:
                 break
 
@@ -252,7 +248,7 @@ class ChessEngine:
         self.tt[board_hash] = TTEntry(depth, best_score, bound)
         return best_score
 
-    def get_best_move(self, sequence: List[str]) -> Optional[chess.Move]:
+    def get_best_move(self, sequence: list[str]) -> chess.Move:
         if sequence or self.board.fen() == chess.STARTING_FEN:
             filtered = self.filter_openings(openings, sequence)
             opening = self.select_random_opening(filtered)
@@ -261,8 +257,6 @@ class ChessEngine:
                 return self.board.parse_san(san_move)
 
         moves = list(self.board.legal_moves)
-        if not moves:
-            return None
 
         moves = self.move_ordering(moves)
         best_move = moves[0]

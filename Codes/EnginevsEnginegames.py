@@ -1,7 +1,7 @@
 import os
 import random
+import subprocess
 import time
-from typing import Tuple
 
 import chess
 from ChessEngine import ChessEngine
@@ -10,27 +10,19 @@ board = chess.Board()
 
 
 # Função para salvar o jogo
-def save_game(moves, white, black, n_game, board):
-    filename = f"Games/n_games/depth3 vs depth1/game_{n_game}_{white}_{black}.pgn"
-
-    if board.is_checkmate():
-        if board.turn == chess.BLACK:
-            result = "1-0"
-        else:
-            result = "0-1"
-    else:
-        result = "1/2-1/2"
+def save_game(moves, white, black, n_game, result):
+    filename = f"Codes/Games/n_games/game_{n_game}_{white}_{black}.pgn"
 
     pgn_header = (
         f'[Event "Engine vs Engine Game"]\n'
         f'[Site "Local"]\n'
-        f"[Date \"{time.strftime('%Y.%m.%d')}\"]\n"
+        f'[Date "{time.strftime("%Y.%m.%d")}"]\n'
         f'[Round "1"]\n'
         f'[White "{white}"]\n'
         f'[Black "{black}"]\n'
         f'[WhiteElo "1500"]\n'
         f'[BlackElo "1500"]\n'
-        f'[Result "{result}"]\n\n'
+        f'[Result "{board.result()}"]\n\n'
     )
 
     os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -47,24 +39,33 @@ def save_game(moves, white, black, n_game, board):
         move_text += result
         file.write(move_text.strip())
 
-    print(f"Game saved to {filename}")
-
 
 # Função para testar o jogo entre duas IAs
 def engine_vs_engine(
     engine1: ChessEngine, engine2: ChessEngine
-) -> Tuple[str, ChessEngine, ChessEngine]:
+) -> tuple[str, list[str]]:
     sequence = []
 
     engine1.color = random.choice([chess.WHITE, chess.BLACK])
     engine2.color = chess.WHITE if engine1.color == chess.BLACK else chess.BLACK
 
+    if engine1.color == chess.WHITE:
+        white_name = engine1.name
+        black_name = engine2.name
+        white_depth = engine1.depth
+        black_depth = engine2.depth
+    else:
+        white_name = engine2.name
+        black_name = engine1.name
+        white_depth = engine2.depth
+        black_depth = engine1.depth
+
     print(
-        f"White: {engine1.name} (Depth {engine1.depth}), Black: {engine2.name} (Depth {engine2.depth})",
-        end="\n\n",
+        f"White: {white_name} (Depth {white_depth}), Black: {black_name} (Depth {black_depth})",
     )
 
     while not board.is_game_over():
+        best_move = random.choice(list(board.legal_moves))
         if engine1.color == board.turn:
             best_move = engine1.get_best_move(sequence)
         elif engine2.color == board.turn:
@@ -73,13 +74,9 @@ def engine_vs_engine(
         sequence.append(san_move)
         board.push(best_move)
 
-    save_game(
-        sequence,
-        f"{engine1.name} (Depth {engine1.depth})",
-        f"{engine2.name} (Depth {engine2.depth})",
-    )
+    print(board.result(), end="\n\n")
 
-    return board.result(), engine1, engine2
+    return board.result(), sequence
 
 
 def n_games(depth1, depth2, number_games=10):
@@ -87,29 +84,51 @@ def n_games(depth1, depth2, number_games=10):
     draws = 0
     losses = 0
 
+    subprocess.run("cls", shell=True, check=False)
+
     engine1 = ChessEngine(board, depth1, None, "Engine 1")
     engine2 = ChessEngine(board, depth2, None, "Engine 2")
 
-    for _ in range(1, number_games + 1):
+    for i in range(number_games):
         board.reset()
-        result, engine_1, engine_2 = engine_vs_engine(engine1, engine2)
+        print(f"Game {i+1}:")
+        result, sequence = engine_vs_engine(engine1, engine2)
 
-        if (result == "1-0" and engine1.name == engine_1.name) or (
-            result == "0-1" and engine1.name == engine_1.name
+        if engine1.color == chess.WHITE:
+            save_game(
+                sequence,
+                f"{engine1.name} (Depth {engine1.depth})",
+                f"{engine2.name} (Depth {engine2.depth})",
+                i,
+                result,
+            )
+        else:
+            save_game(
+                sequence,
+                f"{engine2.name} (Depth {engine2.depth})",
+                f"{engine1.name} (Depth {engine1.depth})",
+                i,
+                result,
+            )
+
+        if (result == "1-0" and engine1.color == chess.WHITE) or (
+            result == "0-1" and engine1.color == chess.BLACK
         ):
             wins += 1
-        elif (result == "1-0" and engine2.name == engine_2.name) or (
-            result == "0-1" and engine2.name == engine_2.name
+        elif (result == "1-0" and engine2.color == chess.WHITE) or (
+            result == "0-1" and engine2.color == chess.BLACK
         ):
             losses += 1
         else:
             draws += 1
 
-    print("\nTabela de Resultados:")
+    subprocess.run("cls", shell=True, check=False)
+
+    print("Tabela de Resultados:", end="\n\n")
     print(
-        f"{engine1.name} (Depth {engine1.depth}) vs {engine2.name} (Depth {engine2.depth})"
+        f"    {engine1.name} (Depth {engine1.depth})\t\t    vs\t\t     {engine2.name} (Depth {engine2.depth})"
     )
-    print(f"Wins: {wins} | Draws: {draws} | Losses: {losses}")
+    print(f"\tWins: {wins} \t|\tDraws: {draws}\t|\tLosses: {losses}")
 
 
-n_games(3, 1, 1000)
+n_games(4, 5, 30)
