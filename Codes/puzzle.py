@@ -1,6 +1,5 @@
 import csv
 import os
-from typing import Optional
 
 import chess
 import pandas as pd
@@ -8,9 +7,7 @@ from ChessEngine import ChessEngine as ce
 
 
 # Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(
-    csv_filename: str, theme: Optional[str] = None
-) -> pd.DataFrame:
+def load_puzzles_from_csv(csv_filename: str, theme: str | None = None):
     df = pd.read_csv(csv_filename)
     if theme:
         df = filter_puzzles_by_theme(df, theme)
@@ -18,19 +15,17 @@ def load_puzzles_from_csv(
 
 
 # Função para filtrar puzzles por tema
-def filter_puzzles_by_theme(df: pd.DataFrame, theme: str) -> pd.DataFrame:
+def filter_puzzles_by_theme(df, theme: str):
     return df[df["Themes"].str.contains(theme, case=False, na=False)]
 
 
 # Função para filtrar puzzles por rating
-def filter_puzzles_by_rating(
-    df: pd.DataFrame, min_rating: float, max_rating: float
-) -> pd.DataFrame:
+def filter_puzzles_by_rating(df, min_rating: float, max_rating: float):
     return df[(df["Rating"] >= min_rating) & (df["Rating"] <= max_rating)]
 
 
 # Função para pegar um puzzle aleatório e os movimentos corretos
-def get_random_fen_and_moves(df: pd.DataFrame) -> tuple:
+def get_random_fen_and_moves(df) -> tuple:
     random_row = df.sample(n=1)
     return (
         random_row["PuzzleId"].values[0],
@@ -44,22 +39,24 @@ def get_random_fen_and_moves(df: pd.DataFrame) -> tuple:
 
 # Função principal para resolver os puzzles
 def puzzle(
-    board: chess.Board, depth: int, theme: str = None, rang: Optional[int] = None
+    board: chess.Board, depth: int, theme: str | None = None, rang: int | None = None
 ):
     # Carregar os puzzles do arquivo CSV
-    csv_filename = ".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
+    csv_filename = r".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
     print("Loading puzzles...")
     df_puzzles = load_puzzles_from_csv(csv_filename, theme)
 
     # Inicializar o rating do bot
     rating = 1500
+    if rang is None:
+        rang = 0
     max_rating = rating + rang
     min_rating = rating - rang
 
     # Arquivo para salvar os dados dos puzzles
-    os.makedirs(".\Codes\PuzzlesResults", exist_ok=True)
+    os.makedirs(r".\Codes\PuzzlesResults", exist_ok=True)
     with open(
-        f".\Codes\PuzzlesResults\puzzle_results_{depth}_{theme}_{rang}.csv",
+        rf".\Codes\PuzzlesResults\puzzle_results_{depth}_{theme}_{rang}.csv",
         mode="w",
         newline="",
     ) as file:
@@ -142,7 +139,7 @@ def puzzle(
                 puzzle_id,
                 fen,
                 moves,
-                round(rating, 3),
+                rating,
                 themes,
                 game_url,
                 " ".join(bot_moves),

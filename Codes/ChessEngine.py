@@ -202,6 +202,12 @@ class ChessEngine:
         return best
 
     def minimax(self, depth: int, alpha: float, beta: float) -> float:
+        if self.board.is_game_over():
+            if self.board.is_checkmate():
+                return (self.depth - depth) - MATE_SCORE
+            else:
+                return 0.0
+
         original_alpha = alpha
         board_hash = zobrist_hash(self.board)
 
@@ -217,11 +223,6 @@ class ChessEngine:
                 return entry.score
 
         moves = list(self.board.legal_moves)
-        if not moves:
-            if self.board.is_check():
-                # Cheque-mate: quanto mais cedo acontecer, pior e para quem apanha.
-                return (self.depth - depth) - MATE_SCORE
-            return 0.0  # Empate (afogamento, material insuficiente, etc.)
 
         if depth == 0:
             score = self.quiescence(alpha, beta)

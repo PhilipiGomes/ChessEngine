@@ -6,7 +6,7 @@ import time
 import chess
 from ChessEngine import ChessEngine
 
-board = chess.Board()
+board = chess.Board(fen="8/8/8/4k3/8/8/8/2NNKN2 w - - 0 1")
 
 
 # Função para salvar o jogo
@@ -63,11 +63,18 @@ def engine_vs_engine(depth1, depth2):
 
     subprocess.run("cls", shell=True, check=False)
 
-    print(
-        f"White: {engine1.name} (Depth {engine1.depth}), Black: {engine2.name} (Depth {engine2.depth})",
-        end="\n\n",
-    )
+    if engine1.color == chess.WHITE:
+        print(
+            f"White: {engine1.name} (Depth {engine1.depth}), Black: {engine2.name} (Depth {engine2.depth})",
+            end="\n\n",
+        )
+    else:
+        print(
+            f"White: {engine2.name} (Depth {engine2.depth}), Black: {engine1.name} (Depth {engine1.depth})",
+            end="\n\n",
+        )
     
+
     while not board.is_game_over():
         best_move = random.choice(list(board.legal_moves))
         if engine1.color == board.turn:
@@ -105,17 +112,23 @@ def engine_vs_engine(depth1, depth2):
         print()
     print(board.result())
 
-    save_game(
-        sequence,
-        f"{engine1.name} (Depth {engine1.depth})",
-        f"{engine2.name} (Depth {engine2.depth})",
-    )
+    if engine1.color == chess.WHITE:
+        save_game(
+            sequence,
+            f"{engine1.name} (Depth {engine1.depth})",
+            f"{engine2.name} (Depth {engine2.depth})",
+        )
+    else:
+        save_game(
+            sequence,
+            f"{engine2.name} (Depth {engine2.depth})",
+            f"{engine1.name} (Depth {engine1.depth})",
+        )
+    
 
-
-board = chess.Board()
 
 # Iniciar o jogo Engine vs Engine
 start = time.time()
-engine_vs_engine(2, 2)
+engine_vs_engine(1, 4)
 elapsed = time.time() - start
 print(f"Time to finish this game: {elapsed:.3f} seconds")

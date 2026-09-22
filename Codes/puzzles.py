@@ -2,7 +2,6 @@ import csv
 import math
 import os
 import subprocess
-from typing import Optional
 
 import chess
 import matplotlib.pyplot as plt  # Importando matplotlib para gráficos
@@ -11,9 +10,7 @@ from ChessEngine import ChessEngine as ce
 
 
 # Função para carregar os puzzles de um arquivo CSV
-def load_puzzles_from_csv(
-    csv_filename: str, theme: Optional[str] = None
-) -> pd.DataFrame:
+def load_puzzles_from_csv(csv_filename: str, theme: str | None = None):
     df = pd.read_csv(csv_filename)
     if theme:
         df = filter_puzzles_by_theme(df, theme)
@@ -21,19 +18,17 @@ def load_puzzles_from_csv(
 
 
 # Função para filtrar puzzles por tema
-def filter_puzzles_by_theme(df: pd.DataFrame, theme: str) -> pd.DataFrame:
+def filter_puzzles_by_theme(df, theme: str):
     return df[df["Themes"].str.contains(theme, case=False, na=False)]
 
 
 # Função para filtrar puzzles por rating
-def filter_puzzles_by_rating(
-    df: pd.DataFrame, min_rating: float, max_rating: float
-) -> pd.DataFrame:
+def filter_puzzles_by_rating(df, min_rating: float, max_rating: float):
     return df[(df["Rating"] >= min_rating) & (df["Rating"] <= max_rating)]
 
 
 # Função para pegar um puzzle aleatório e os movimentos corretos
-def get_random_fen_and_moves(df: pd.DataFrame) -> tuple:
+def get_random_fen_and_moves(df) -> tuple:
     random_row = df.sample(n=1)
     return (
         random_row["PuzzleId"].values[0],
@@ -63,16 +58,18 @@ def puzzle(
     board: chess.Board,
     depth: int,
     num_puzzles: int,
-    theme: Optional[str] = None,
-    rang: Optional[int] = None,
+    theme: str | None = None,
+    rang: int | None = None,
 ):
     # Carregar os puzzles do arquivo CSV
-    csv_filename = ".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
+    csv_filename = r".\Codes\Data\lichess_db_puzzle.csv"  # Atualize o caminho do arquivo, se necessário
     print("Loading puzzles...")
     df_puzzles = load_puzzles_from_csv(csv_filename, theme)
 
     # Inicializar o rating do bot
-    rating = 1500
+    rating = 1500.0
+    if rang is None:
+        rang = 0
     min_rating = rating - rang
     max_rating = rating + rang
 
@@ -81,7 +78,7 @@ def puzzle(
 
     # Arquivo para salvar os dados dos puzzles
     # Garantir que a pasta de resultados exista
-    output_dir = ".\Codes\PuzzlesResults"
+    output_dir = r".\Codes\PuzzlesResults"
     os.makedirs(output_dir, exist_ok=True)
 
     # Construir a parte do tema de forma segura (evita f-string aninhada que causa erro em < Python 3.12)
@@ -129,7 +126,7 @@ def puzzle(
                 print(f"Posição FEN inválida para o puzzle {puzzle_id}.")
                 continue
 
-            subprocess.run("cls", shell=True)
+            subprocess.run("cls", shell=True, check=False)
 
             print(f"Number of puzzles filtered: {len(df_puzzles)}")
             print(f"Puzzle {puzzle_index + 1}: {puzzle_id}")

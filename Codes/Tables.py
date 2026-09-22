@@ -1,7 +1,6 @@
 # trunk-ignore-all(black)
 import chess
 
-
 piece_tables = {
 
     chess.PAWN: [

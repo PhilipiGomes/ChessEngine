@@ -91,7 +91,7 @@ def n_games(depth1, depth2, number_games=10):
 
     for i in range(number_games):
         board.reset()
-        print(f"Game {i+1}:")
+        print(f"Game {i + 1}:")
         result, sequence = engine_vs_engine(engine1, engine2)
 
         if engine1.color == chess.WHITE:
